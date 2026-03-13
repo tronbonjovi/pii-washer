@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest pii_shield/tests/test_temp_data_store.py -v)",
+      "Bash(py -m pytest pii_shield/tests/test_temp_data_store.py -v)",
+      "Read(//c/Users/tron/AppData/Local/Programs/**)",
+      "Bash(conda info:*)",
+      "Read(//c/ProgramData/anaconda3/**)",
+      "Read(//c/Users/tron/anaconda3/**)",
+      "Read(//c/Users/tron/miniconda3/**)",
+      "Bash(cmd.exe /c \"where python\")",
+      "Bash(python -m pytest pii_shield/tests/ -v)",
+      "Bash(python -c \"import presidio_analyzer; print\\(''presidio OK''\\); import spacy; print\\(''spacy OK''\\); nlp = spacy.load\\(''en_core_web_lg''\\); print\\(''en_core_web_lg OK''\\)\")",
+      "Bash(pip install:*)",
+      "Bash(python -m pip install presidio-analyzer spacy)",
+      "Bash(python -m spacy download en_core_web_lg)",
+      "Bash(py -3.12 --version)",
+      "Bash(py -3.11 --version)",
+      "Bash(py -3.10 --version)",
+      "Bash(py -3.13 --version)",
+      "Bash(py install:*)",
+      "Bash(py -3.13 -m venv .venv)",
+      "Bash(source .venv/Scripts/activate)",
+      "Bash(python -m pytest pii_shield/tests/test_pii_detection_engine.py -v)",
+      "Bash(python -c \":*)",
+      "Bash(python -m pytest pii_shield/tests/test_placeholder_generator.py -v)",
+      "Bash(python -m pytest pii_shield/tests/ -v --ignore=pii_shield/tests/test_pii_detection_engine.py)",
+      "Bash(python -m pytest pii_shield/tests/test_text_substitution_engine.py -v)",
+      "Bash(python -m pytest pii_shield/tests/test_session_manager.py -v)",
+      "Bash(python -c \"import streamlit; print\\(streamlit.__version__\\)\")",
+      "Bash(python -c \"from pii_shield.app import *; print\\(''Import OK''\\)\")",
+      "Bash(python -c \"from pii_shield.app import CATEGORY_COLORS; print\\(''''Import OK''''\\)\")",
+      "Bash(python -c \"import ast; ast.parse\\(open\\(''pii_shield/app.py''\\).read\\(\\)\\); print\\(''Syntax OK''\\)\")",
+      "Bash(python -c \"from pii_shield.session_manager import SessionManager; m = SessionManager\\(\\); print\\(''SessionManager OK''\\); sid = m.load_text\\(''Test text with john@example.com''\\); print\\(f''Session: {sid}''\\); print\\(m.list_sessions\\(\\)\\); print\\(m.export_session\\(sid\\)[:100]\\)\")",
+      "Bash(python -m pytest pii_shield/tests/ -q)"
+    ]
+  }
+}
