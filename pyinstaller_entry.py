@@ -53,8 +53,8 @@ def _build_app():
 
         @app.get("/{path:path}")
         async def spa_fallback(path: str):
-            file_path = os.path.join(ui_dir, path)
-            if path and os.path.isfile(file_path):
+            file_path = os.path.realpath(os.path.join(ui_dir, path))
+            if path and file_path.startswith(os.path.realpath(ui_dir)) and os.path.isfile(file_path):
                 return FileResponse(file_path)
             return FileResponse(index_html)
 
