@@ -31,10 +31,10 @@ export function HighlightSpan({ detection, text, isFocused, isFirstOccurrence, o
       ref={ref}
       data-detection-id={detection.id}
       onClick={(e) => {
-        // stopPropagation prevents the document container's onClick from clearing focus.
-        // This does NOT interfere with text selection — selection uses mouse events,
-        // not the click event.
         e.stopPropagation();
+        // If the user just selected text, don't steal focus from the selection.
+        const sel = window.getSelection();
+        if (sel && sel.toString().length > 0) return;
         onClick(detection.id);
       }}
       style={{

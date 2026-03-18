@@ -73,9 +73,13 @@ export function DocumentViewer({
   return (
     <ScrollArea className="h-full">
       <div
-        className="p-6 text-sm leading-relaxed"
+        className="p-6 text-sm leading-relaxed select-text"
         style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}
-        onClick={onDocumentClick}
+        onClick={() => {
+          const sel = window.getSelection();
+          if (sel && sel.toString().length > 0) return;
+          onDocumentClick();
+        }}
       >
         {segments.map((seg, i) => {
           if (seg.type === 'plain') {
