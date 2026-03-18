@@ -1,7 +1,3 @@
-import os
-import signal
-import tempfile
-import threading
 from pathlib import Path
 
 from fastapi import APIRouter, Request, UploadFile
@@ -87,20 +83,6 @@ def health(request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Shutdown (for Tauri sidecar graceful termination)
-# ---------------------------------------------------------------------------
-
-@router.post("/shutdown")
-def shutdown():
-    """Gracefully shut down the backend server.
-
-    Defers SIGTERM by 0.5s so uvicorn can send the HTTP response first.
-    """
-    threading.Timer(0.5, os.kill, args=(os.getpid(), signal.SIGTERM)).start()
-    return {"status": "shutting_down"}
-
-
-# ---------------------------------------------------------------------------
 # Session management — fixed paths first (before parameterized routes)
 # ---------------------------------------------------------------------------
 
@@ -141,28 +123,29 @@ async def upload_session(file: UploadFile, request: Request):
             ),
         )
 
-    # Write to temp file and pass path to session manager
-    tmp_path = None
+    # Decode in memory — never write PII to disk
     try:
-        with tempfile.NamedTemporaryFile(
-            delete=False, suffix=suffix, mode="wb"
-        ) as tmp:
-            tmp.write(content)
-            tmp_path = tmp.name
+        text = content.decode("utf-8")
+    except UnicodeDecodeError:
+        return JSONResponse(
+            status_code=422,
+            content=_error_body(
+                "DECODE_ERROR",
+                "File could not be decoded as UTF-8 text",
+            ),
+        )
 
+    try:
         sm = _sm(request)
-        session_id = sm.load_file(tmp_path)
+        session_id = sm.load_text(text)
         session = sm.get_session(session_id)
-        # Restore the original filename (temp path was used internally)
+        session["source_format"] = suffix
         session["source_filename"] = file.filename
         return _to_session_created(session)
     except ValueError as exc:
         return value_error_response(exc)
     except Exception as exc:
         return server_error_response(exc)
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            os.unlink(tmp_path)
 
 
 @router.get("/sessions", response_model=list[SessionListItem])

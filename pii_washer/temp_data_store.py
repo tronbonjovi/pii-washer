@@ -32,6 +32,27 @@ class TempDataStore:
         self._sessions: dict[str, dict] = {}
         atexit.register(self.secure_clear)
 
+    @staticmethod
+    def _recursive_wipe(obj) -> None:
+        """Best-effort in-place overwrite of all string values in nested structures."""
+        if isinstance(obj, dict):
+            for key in list(obj.keys()):
+                value = obj[key]
+                if isinstance(value, str):
+                    obj[key] = ""
+                elif isinstance(value, dict):
+                    TempDataStore._recursive_wipe(value)
+                    value.clear()
+                elif isinstance(value, list):
+                    TempDataStore._recursive_wipe(value)
+        elif isinstance(obj, list):
+            for i, item in enumerate(obj):
+                if isinstance(item, str):
+                    obj[i] = ""
+                elif isinstance(item, (dict, list)):
+                    TempDataStore._recursive_wipe(item)
+            obj.clear()
+
     def _now(self) -> str:
         return datetime.now(timezone.utc).isoformat()
 
@@ -97,6 +118,7 @@ class TempDataStore:
     def delete_session(self, session_id: str) -> None:
         if session_id not in self._sessions:
             raise KeyError(f"Session not found: {session_id}")
+        self._recursive_wipe(self._sessions[session_id])
         del self._sessions[session_id]
 
     def list_sessions(self) -> list[dict]:
@@ -116,6 +138,8 @@ class TempDataStore:
 
     def clear_all(self) -> int:
         count = len(self._sessions)
+        for session in self._sessions.values():
+            self._recursive_wipe(session)
         self._sessions.clear()
         return count
 
@@ -168,11 +192,7 @@ class TempDataStore:
         """
         count = len(self._sessions)
         for session in self._sessions.values():
-            for field in self._SENSITIVE_FIELDS:
-                if field in session and isinstance(session[field], str):
-                    session[field] = ""
-                elif field in session and isinstance(session[field], list):
-                    session[field] = []
+            self._recursive_wipe(session)
         self._sessions.clear()
         return count
 

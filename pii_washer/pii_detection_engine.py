@@ -1,8 +1,18 @@
 import re
 
 import spacy
+import tldextract
+import tldextract.tldextract as _tldextract_mod
 from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer
 from presidio_analyzer.nlp_engine import NlpEngineProvider
+
+# Force tldextract to use its bundled snapshot only — no network calls.
+# Presidio's EmailRecognizer calls tldextract.extract() which would otherwise
+# fetch the Public Suffix List over HTTPS on first use.
+_tldextract_mod.TLD_EXTRACTOR = tldextract.TLDExtract(
+    suffix_list_urls=(),
+    fallback_to_snapshot=True,
+)
 
 
 class PIIDetectionEngine:

@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { ExportConfirmDialog } from './ExportConfirmDialog';
 import { useExportSession } from '@/hooks/use-sessions';
 import { isAPIError, type SessionListItem } from '@/types/api';
 import { toast } from 'sonner';
@@ -17,6 +18,7 @@ interface SessionActionsProps {
 
 export function SessionActions({ session }: SessionActionsProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const exportSession = useExportSession();
 
@@ -26,6 +28,7 @@ export function SessionActions({ session }: SessionActionsProps) {
       onSuccess: (jsonString) => {
         try {
           triggerDownload(jsonString, session);
+          setExportOpen(false);
           toast.success('Session exported');
         } catch (error) {
           console.error('Failed to start session export download.', error);
@@ -68,11 +71,8 @@ export function SessionActions({ session }: SessionActionsProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={handleExport}
-              disabled={exportSession.isPending}
-            >
-              {exportSession.isPending ? 'Exporting…' : 'Export'}
+            <DropdownMenuItem onClick={() => setExportOpen(true)}>
+              Export
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => setDeleteOpen(true)}
@@ -88,6 +88,13 @@ export function SessionActions({ session }: SessionActionsProps) {
           </p>
         )}
       </div>
+
+      <ExportConfirmDialog
+        open={exportOpen}
+        onOpenChange={setExportOpen}
+        onConfirm={handleExport}
+        isPending={exportSession.isPending}
+      />
 
       <DeleteConfirmDialog
         session={session}

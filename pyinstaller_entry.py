@@ -7,6 +7,7 @@ window via pywebview. Closing the window shuts everything down.
 import os
 import sys
 import threading
+from pathlib import Path
 
 import uvicorn
 import webview
@@ -53,8 +54,8 @@ def _build_app():
 
         @app.get("/{path:path}")
         async def spa_fallback(path: str):
-            file_path = os.path.realpath(os.path.join(ui_dir, path))
-            if path and file_path.startswith(os.path.realpath(ui_dir)) and os.path.isfile(file_path):
+            file_path = Path(os.path.realpath(os.path.join(ui_dir, path)))
+            if path and file_path.is_relative_to(os.path.realpath(ui_dir)) and file_path.is_file():
                 return FileResponse(file_path)
             return FileResponse(index_html)
 

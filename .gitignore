@@ -19,6 +19,10 @@ archive/
 CLAUDE.md
 .claude/settings.local.json
 
+# Security review docs (local only)
+SECURITY-REVIEW-REQUEST.md
+SECURITY-REVIEW-FINDINGS.md
+
 # IDE and editor files
 .vscode/
 .idea/
