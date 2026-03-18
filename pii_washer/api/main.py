@@ -1,10 +1,33 @@
+import logging
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import API_PREFIX, APP_VERSION, CORS_ORIGINS
 from .router import router
+
+
+def _configure_logging():
+    """Set up logging to a file in the user's home directory."""
+    log_dir = Path.home() / ".pii-washer"
+    log_dir.mkdir(exist_ok=True)
+    log_file = log_dir / "pii-washer.log"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        handlers=[
+            logging.FileHandler(log_file, encoding="utf-8"),
+        ],
+    )
+    return log_file
+
+
+_log_file = _configure_logging()
+logger = logging.getLogger("pii_washer")
 
 
 def create_app(session_manager=None) -> FastAPI:
@@ -24,9 +47,11 @@ def create_app(session_manager=None) -> FastAPI:
             from pii_washer.session_manager import SessionManager
             app.state.session_manager = SessionManager()
 
+        logger.info("PII Washer %s started (log: %s)", APP_VERSION, _log_file)
         yield
 
         app.state.session_manager.clear_all_sessions()
+        logger.info("PII Washer shut down, sessions cleared")
 
     app = FastAPI(
         title="PII Washer API",

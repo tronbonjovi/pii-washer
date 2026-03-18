@@ -1,4 +1,8 @@
+import logging
+
 from fastapi.responses import JSONResponse
+
+logger = logging.getLogger("pii_washer")
 
 
 def _error_body(code: str, message: str, details=None) -> dict:
@@ -42,7 +46,8 @@ def runtime_error_response(exc: RuntimeError) -> JSONResponse:
 
 
 def server_error_response(exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled error: %s", exc)
     return JSONResponse(
         status_code=500,
-        content=_error_body("SERVER_ERROR", "An unexpected error occurred"),
+        content=_error_body("SERVER_ERROR", f"An unexpected error occurred: {type(exc).__name__}: {exc}"),
     )
