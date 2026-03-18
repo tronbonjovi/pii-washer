@@ -1,0 +1,55 @@
+# Python virtual environment
+.venv/
+venv/
+env/
+
+# Python bytecode cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Archived project working docs (kept locally, not shipped)
+archive/
+
+# Superpowers plugin state
+.superpowers/
+
+# Claude Code config (local only)
+CLAUDE.md
+.claude/settings.local.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# spaCy model downloads (large, shouldn't be in repo)
+*.whl
+
+# Exported session data (contains PII)
+*.json
+!package.json
+!pyproject.toml
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / build artifacts
+*.spec
+pii-washer-ui/src-tauri/
