@@ -1,0 +1,75 @@
+import pytest
+from presidio_analyzer import AnalyzerEngine
+from presidio_analyzer.nlp_engine import NlpEngineProvider
+from pii_washer.name_recognizer import TitleNameRecognizer
+
+
+@pytest.fixture(scope="module")
+def title_recognizer():
+    return TitleNameRecognizer()
+
+
+@pytest.fixture(scope="module")
+def analyzer(title_recognizer):
+    """Minimal analyzer with just the title recognizer for isolated testing."""
+    provider = NlpEngineProvider(nlp_configuration={
+        "nlp_engine_name": "spacy",
+        "models": [{"lang_code": "en", "model_name": "en_core_web_lg"}],
+    })
+    engine = provider.create_engine()
+    analyzer = AnalyzerEngine(nlp_engine=engine, supported_languages=["en"])
+    analyzer.registry.add_recognizer(title_recognizer)
+    return analyzer
+
+
+class TestTitleNameRecognizer:
+    def test_mr_lastname(self, analyzer):
+        results = analyzer.analyze("Please contact Mr. Smith regarding the matter.", language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        assert any("Smith" in "Please contact Mr. Smith regarding the matter."[r.start:r.end] for r in persons)
+
+    def test_dr_full_name(self, analyzer):
+        results = analyzer.analyze("Dr. Jane Doe will see you now.", language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        texts = ["Dr. Jane Doe will see you now."[r.start:r.end] for r in persons]
+        assert any("Jane" in t and "Doe" in t for t in texts)
+
+    def test_professor_name(self, analyzer):
+        results = analyzer.analyze("Professor Michael Williams teaches physics.", language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        texts = ["Professor Michael Williams teaches physics."[r.start:r.end] for r in persons]
+        assert any("Williams" in t for t in texts)
+
+    def test_judge_name(self, analyzer):
+        results = analyzer.analyze("The case was heard by Judge Patricia Chen.", language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        texts = ["The case was heard by Judge Patricia Chen."[r.start:r.end] for r in persons]
+        assert any("Chen" in t for t in texts)
+
+    def test_title_without_period(self, analyzer):
+        results = analyzer.analyze("Mr Smith called yesterday.", language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        assert any("Smith" in "Mr Smith called yesterday."[r.start:r.end] for r in persons)
+
+    def test_three_word_name(self, analyzer):
+        results = analyzer.analyze("Mrs. Mary Jane Watson arrived.", language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        texts = ["Mrs. Mary Jane Watson arrived."[r.start:r.end] for r in persons]
+        assert any("Watson" in t for t in texts)
+
+    def test_military_title(self, analyzer):
+        results = analyzer.analyze("Sgt. Robert Johnson reported for duty.", language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        assert any("Johnson" in "Sgt. Robert Johnson reported for duty."[r.start:r.end] for r in persons)
+
+    def test_confidence_is_0_7(self, title_recognizer):
+        """Title recognizer should produce confidence of 0.7."""
+        for pattern in title_recognizer.patterns:
+            assert pattern.score == 0.7
+
+    def test_no_match_without_title(self, analyzer):
+        """Should not produce results for names without titles (that's NER's job)."""
+        text = "John Smith went to the store."
+        results = analyzer.analyze(text, language="en", entities=["PERSON"])
+        title_results = [r for r in results if r.score == 0.7]
+        assert len(title_results) == 0
