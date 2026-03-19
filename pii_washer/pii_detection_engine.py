@@ -188,21 +188,21 @@ class CustomPhoneRecognizer(EntityRecognizer):
         seen = set()
 
         patterns = [
-            # Parentheses + dashes: (555) 123-4567 (0.75) — very common US format
-            # Area code first digit 2-9; exchange not validated (many real numbers use 1xx)
-            (r"\(([2-9]\d{2})\)\s*\d{3}-\d{4}" + self._EXTENSION, 0.75),
-            # Country code + parens: +1 (555) 123-4567 (0.75)
-            (r"\+?1\s*\(([2-9]\d{2})\)\s*\d{3}-\d{4}" + self._EXTENSION, 0.75),
-            # Dashes: 555-123-4567 (0.65) — standard format
-            (r"\b([2-9]\d{2})-\d{3}-\d{4}" + self._EXTENSION + r"\b", 0.65),
-            # Country code + dashes: +1-555-123-4567 (0.7)
-            (r"\+1[\s.\-]([2-9]\d{2})[\s.\-]\d{3}[\s.\-]\d{4}" + self._EXTENSION, 0.7),
+            # Parentheses + dashes: (555) 234-5678 (0.75) — very common US format
+            # Area code first digit 2-9; exchange first digit 2-9
+            (r"\(([2-9]\d{2})\)\s*[2-9]\d{2}-\d{4}" + self._EXTENSION, 0.75),
+            # Country code + parens: +1 (555) 234-5678 (0.75)
+            (r"\+?1\s*\(([2-9]\d{2})\)\s*[2-9]\d{2}-\d{4}" + self._EXTENSION, 0.75),
+            # Dashes: 555-234-5678 (0.65) — standard format
+            (r"\b([2-9]\d{2})-[2-9]\d{2}-\d{4}" + self._EXTENSION + r"\b", 0.65),
+            # Country code + dashes: +1-555-234-5678 (0.7)
+            (r"\+1[\s.\-]([2-9]\d{2})[\s.\-][2-9]\d{2}[\s.\-]\d{4}" + self._EXTENSION, 0.7),
             # Dots: 512.555.1234 (0.65)
-            (r"\b([2-9]\d{2})\.\d{3}\.\d{4}" + self._EXTENSION + r"\b", 0.65),
+            (r"\b([2-9]\d{2})\.[2-9]\d{2}\.\d{4}" + self._EXTENSION + r"\b", 0.65),
             # Spaces: 512 555 1234 (0.55)
-            (r"\b([2-9]\d{2}) \d{3} \d{4}" + self._EXTENSION + r"\b", 0.55),
+            (r"\b([2-9]\d{2}) [2-9]\d{2} \d{4}" + self._EXTENSION + r"\b", 0.55),
             # Mixed: (512) 555.1234 or (512) 555 1234 (0.65)
-            (r"\(([2-9]\d{2})\)\s*\d{3}[.\s]\d{4}" + self._EXTENSION, 0.65),
+            (r"\(([2-9]\d{2})\)\s*[2-9]\d{2}[.\s]\d{4}" + self._EXTENSION, 0.65),
         ]
 
         for pat, base_score in patterns:
@@ -213,7 +213,7 @@ class CustomPhoneRecognizer(EntityRecognizer):
                     results.append(RecognizerResult("PHONE_NUMBER", m.start(), m.end(), base_score))
 
         # No separators: only with context (0.4)
-        no_sep_pat = re.compile(r"\b([2-9]\d{2})\d{3}\d{4}\b")
+        no_sep_pat = re.compile(r"\b([2-9]\d{2})([2-9]\d{2})\d{4}\b")
         for m in no_sep_pat.finditer(text):
             span = (m.start(), m.end())
             if span not in seen and self._has_phone_context(text, m.start()):
@@ -292,6 +292,10 @@ class CustomIPRecognizer(EntityRecognizer):
             r"\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3}):(\d{1,5})\b"
         )
         for m in ipv4_port.finditer(text):
+            octets = (int(m.group(1)), int(m.group(2)), int(m.group(3)), int(m.group(4)))
+            port = int(m.group(5))
+            if any(o > 255 for o in octets) or port < 1 or port > 65535:
+                continue
             span = (m.start(), m.end())
             if span not in seen:
                 seen.add(span)
@@ -659,9 +663,9 @@ class PIIDetectionEngine:
             if re.search(r"\b" + re.escape(st_type) + r"\.?\b", context, re.IGNORECASE):
                 return True
 
-        # Task 12: check for known city names (case-insensitive)
+        # Task 12: check for known city names (case-insensitive, whole word)
         for city in self._us_cities:
-            if city in context_lower:
+            if re.search(r"\b" + re.escape(city) + r"\b", context_lower):
                 return True
 
         return False

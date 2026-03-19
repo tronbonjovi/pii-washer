@@ -38,7 +38,7 @@ def test_detect_multiple_emails(engine):
 # --- Phone Number Detection ---
 
 def test_detect_phone_parentheses(engine):
-    text = "Call me at (555) 123-4567 today."
+    text = "Call me at (555) 234-4567 today."
     results = engine.detect(text)
     phones = [r for r in results if r["category"] == "PHONE"]
     assert len(phones) >= 1
@@ -47,14 +47,14 @@ def test_detect_phone_parentheses(engine):
 
 
 def test_detect_phone_dashes(engine):
-    text = "My number is 555-123-4567."
+    text = "My number is 555-234-4567."
     results = engine.detect(text)
     phones = [r for r in results if r["category"] == "PHONE"]
     assert len(phones) >= 1
 
 
 def test_detect_phone_international(engine):
-    text = "Reach me at +1 (555) 123-4567 anytime."
+    text = "Reach me at +1 (555) 234-4567 anytime."
     results = engine.detect(text)
     phones = [r for r in results if r["category"] == "PHONE"]
     assert len(phones) >= 1
@@ -312,7 +312,7 @@ def test_no_generic_url(engine):
 # --- Combined / Multi-Type Detection ---
 
 def test_detect_mixed_pii(engine):
-    text = "John Smith's email is john@example.com and his phone is (555) 123-4567."
+    text = "John Smith's email is john@example.com and his phone is (555) 234-4567."
     results = engine.detect(text)
     categories = {r["category"] for r in results}
     assert "NAME" in categories
@@ -375,7 +375,7 @@ def test_detection_structure(engine):
 
 
 def test_detection_ids_sequential(engine):
-    text = "John Smith's email is john@example.com and his phone is (555) 123-4567."
+    text = "John Smith's email is john@example.com and his phone is (555) 234-4567."
     results = engine.detect(text)
     assert len(results) >= 2
     for i, det in enumerate(results, start=1):
@@ -383,7 +383,7 @@ def test_detection_ids_sequential(engine):
 
 
 def test_detection_sorted_by_position(engine):
-    text = "Email: alice@test.com — Phone: (555) 111-2222 — Name: Bob Jones"
+    text = "Email: alice@test.com — Phone: (555) 222-2222 — Name: Bob Jones"
     results = engine.detect(text)
     starts = [r["positions"][0]["start"] for r in results]
     assert starts == sorted(starts)
@@ -910,6 +910,21 @@ def test_zip_keyword_context(engine):
     results = engine.detect(text)
     addresses = [r for r in results if r["category"] == "ADDRESS"]
     assert any("90210" in a["original_value"] for a in addresses)
+
+
+def test_zip_no_city_substring_match(engine):
+    """City name substring in a medical term should NOT trigger ZIP detection.
+
+    'corona' is in the city list but 'coronary' contains it as a substring.
+    The word-boundary fix ensures 'coronary artery disease' does not count
+    as city context and a bare 5-digit number is not flagged as a ZIP.
+    """
+    text = "Patient has coronary artery disease. Refer to case 85001."
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert not any("85001" in a["original_value"] for a in addresses), (
+        "85001 should NOT be detected as a ZIP — 'coronary' is not the city 'corona'"
+    )
 
 
 def test_url_reddit_user(engine):
