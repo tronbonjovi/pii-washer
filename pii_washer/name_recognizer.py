@@ -96,3 +96,96 @@ class DictionaryNameRecognizer(EntityRecognizer):
                 ))
 
         return results
+
+
+class CapitalizedPairRecognizer(EntityRecognizer):
+    """Detects potential names from adjacent capitalized word pairs not at sentence starts."""
+
+    CONFIDENCE = 0.3
+
+    def __init__(self):
+        super().__init__(
+            supported_entities=["PERSON"],
+            supported_language="en",
+            name="CapitalizedPairRecognizer",
+        )
+        exclusions_path = DATA_DIR / "capitalized_word_exclusions.json"
+        with open(exclusions_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        # Org suffixes disqualify any match containing them (even one word)
+        self._org_suffixes = {v.lower() for v in data.get("org_suffixes", [])}
+        # Multi-word exclusions filter if the full phrase matches
+        self._multiword_exclusions = set()
+        # Single-word exclusions filter only if ALL words in the match are excluded
+        self._singleword_exclusions = set()
+        for category, values in data.items():
+            if category == "org_suffixes":
+                continue
+            for value in values:
+                words = value.split()
+                if len(words) == 1:
+                    self._singleword_exclusions.add(value.lower())
+                else:
+                    self._multiword_exclusions.add(value.lower())
+
+    def load(self):
+        pass
+
+    def _is_sentence_start(self, text, start):
+        """Check if position `start` is at the beginning of a sentence/clause."""
+        if start == 0:
+            return True
+        before = text[:start]
+        window = before[max(0, len(before) - 10):]
+        if re.search(r"[.!?]\s+$", window):
+            return True
+        if re.search(r":\s+$", window):
+            return True
+        if re.search(r"\n\s*[-*\u2022]\s+$", window):
+            return True
+        if re.search(r"\n\s*\d+\.\s+$", window):
+            return True
+        if re.search(r"\n\s*>\s*$", window):
+            return True
+        if re.search(r"\n\s*$", window):
+            return True
+        if re.search(r"\t$", window):
+            return True
+        return False
+
+    def analyze(self, text, entities, nlp_artifacts=None, regex_flags=0):
+        results = []
+        pattern = re.compile(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b")
+
+        for match in pattern.finditer(text):
+            start = match.start()
+            matched_text = match.group()
+
+            # Filter: skip sentence starts
+            if self._is_sentence_start(text, start):
+                continue
+
+            # Filter: skip if the full phrase matches a multi-word exclusion
+            if matched_text.lower() in self._multiword_exclusions:
+                continue
+
+            words = matched_text.split()
+
+            # Filter: skip if ANY word is an org suffix (e.g., "Acme Corp")
+            if any(w.lower() in self._org_suffixes for w in words):
+                continue
+
+            # Filter: skip if ALL words in the match are single-word exclusions
+            # (e.g., "January February" — both are month names)
+            # But "May Chen" passes because "Chen" is not excluded
+            if all(w.lower() in self._singleword_exclusions for w in words):
+                continue
+
+            results.append(RecognizerResult(
+                entity_type="PERSON",
+                start=start,
+                end=match.end(),
+                score=self.CONFIDENCE,
+            ))
+
+        return results

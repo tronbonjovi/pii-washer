@@ -1,7 +1,7 @@
 import pytest
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from pii_washer.name_recognizer import TitleNameRecognizer, DictionaryNameRecognizer
+from pii_washer.name_recognizer import TitleNameRecognizer, DictionaryNameRecognizer, CapitalizedPairRecognizer
 
 
 @pytest.fixture(scope="module")
@@ -112,3 +112,70 @@ class TestDictionaryNameRecognizer:
         results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
         for r in results:
             assert r.score == 0.4
+
+
+@pytest.fixture(scope="module")
+def cap_recognizer():
+    return CapitalizedPairRecognizer()
+
+
+class TestCapitalizedPairRecognizer:
+    def test_mid_sentence_pair(self, cap_recognizer):
+        text = "The defendant, Marcus Chen, pleaded not guilty."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert any("Marcus" in t and "Chen" in t for t in texts)
+
+    def test_no_match_sentence_start(self, cap_recognizer):
+        text = "Big Apple is a nickname for New York."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Big Apple" in t for t in texts)
+
+    def test_no_match_after_period(self, cap_recognizer):
+        text = "Done. Good Morning everyone."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Good Morning" in t for t in texts)
+
+    def test_no_match_after_colon(self, cap_recognizer):
+        text = "Subject: Big News today."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Big News" in t for t in texts)
+
+    def test_no_match_after_bullet(self, cap_recognizer):
+        text = "Items:\n- Red Widget is on sale."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Red Widget" in t for t in texts)
+
+    def test_no_match_month_names(self, cap_recognizer):
+        text = "She visited in January February was cold."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("January February" in t for t in texts)
+
+    def test_no_match_org_suffix(self, cap_recognizer):
+        text = "She works at Acme Corp downtown."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Acme Corp" in t for t in texts)
+
+    def test_no_match_state_name(self, cap_recognizer):
+        text = "They drove through New Mexico last summer."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("New Mexico" in t for t in texts)
+
+    def test_after_comma_mid_sentence(self, cap_recognizer):
+        text = "The award went to the director, Steven Park, for his work."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert any("Steven" in t and "Park" in t for t in texts)
+
+    def test_confidence_is_0_3(self, cap_recognizer):
+        text = "The director, Marcus Chen, spoke."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        for r in results:
+            assert r.score == 0.3
