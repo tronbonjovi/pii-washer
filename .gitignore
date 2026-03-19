@@ -12,6 +12,9 @@ __pycache__/
 # Archived project working docs (kept locally, not shipped)
 archive/
 
+# Git worktrees (local development workspaces)
+.worktrees/
+
 # Superpowers plugin state
 .superpowers/
 
