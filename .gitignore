@@ -44,7 +44,9 @@ desktop.ini
 # Exported session data (contains PII)
 *.json
 !package.json
+!package-lock.json
 !pyproject.toml
+!pii_washer/data/*.json
 
 # Distribution / packaging
 dist/

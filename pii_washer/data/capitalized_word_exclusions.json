@@ -1,0 +1,9 @@
+{
+  "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+  "days": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+  "us_states": ["Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado", "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming"],
+  "org_suffixes": ["Inc", "LLC", "Corp", "Ltd", "Co", "Foundation", "Association", "Institute", "University", "College", "Hospital", "Center", "Group", "Partners", "International", "National", "Federal", "Global"],
+  "countries": ["United States", "United Kingdom", "New Zealand", "South Africa", "North Korea", "South Korea", "Saudi Arabia", "Costa Rica", "Puerto Rico", "Sri Lanka", "El Salvador", "Sierra Leone"],
+  "languages": ["American English", "British English", "Mandarin Chinese"],
+  "common_phrases": ["Dear Sir", "Dear Madam", "Best Regards", "Kind Regards", "Yours Truly", "Thank You", "Happy Birthday", "Happy New", "Merry Christmas", "Good Morning", "Good Afternoon", "Good Evening", "High School", "Middle School", "Supreme Court", "White House", "Wall Street", "Main Street", "Central Park", "World War", "Civil War"]
+}
