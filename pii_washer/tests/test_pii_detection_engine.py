@@ -962,3 +962,92 @@ def test_detect_signature_default_is_0_2(engine):
     results_02 = engine.detect(text, confidence_threshold=0.2)
     results_03 = engine.detect(text, confidence_threshold=0.3)
     assert len(results_02) >= len(results_03)
+
+
+# =============================================================================
+# Task 14: Integration tests — new format variants
+# =============================================================================
+
+class TestDetectionIntegration:
+    def test_document_with_new_formats(self, engine):
+        """Document using several new format variants."""
+        text = (
+            "Patient: Jane Doe\n"
+            "SSN: 219 09 9999\n"
+            "Phone: 555.867.5309\n"
+            "Email: jane(at)example.com\n"
+            "Address: P.O. Box 1234, Houston 77001\n"
+            "DOB: d.o.b 03/15/1990\n"
+            "Card: 4111 1111 1111 1111\n"
+            "Profile: https://reddit.com/user/janedoe\n"
+        )
+        results = engine.detect(text, confidence_threshold=0.2)
+        categories = {r["category"] for r in results}
+        assert "NAME" in categories, "Jane Doe should be detected"
+        assert "SSN" in categories, "Spaced SSN should be detected"
+        assert "PHONE" in categories, "Dotted phone should be detected"
+        assert "EMAIL" in categories, "Obfuscated email should be detected"
+        assert "ADDRESS" in categories, "PO Box should be detected"
+        assert "DOB" in categories, "DOB with d.o.b keyword should be detected"
+        assert "CCN" in categories, "Spaced card number should be detected"
+        assert "URL" in categories, "Reddit profile should be detected"
+
+    def test_mixed_old_and_new_formats(self, engine):
+        """Document mixing original formats with new ones."""
+        text = (
+            "Contact Mr. John Smith at john@example.com or 555.867.5309.\n"
+            "SSN: 219-09-9999 (also written as 219 09 9999).\n"
+            "Lives at 742 Evergreen Terrace, Springfield, IL 62704.\n"
+            "Also check P.O. Box 500.\n"
+        )
+        results = engine.detect(text, confidence_threshold=0.2)
+        assert len(results) >= 6  # name, email, phone, SSN(s), address, zip
+
+
+# =============================================================================
+# Task 14: False positive tests
+# =============================================================================
+
+class TestFalsePositives:
+    def test_nine_digit_order_number(self, engine):
+        """9-digit number without SSN context should not be flagged as SSN."""
+        text = "Your order number is 123456789. Thank you for shopping."
+        results = engine.detect(text, confidence_threshold=0.2)
+        ssns = [r for r in results if r["category"] == "SSN"]
+        assert len(ssns) == 0
+
+    def test_ten_digit_isbn(self, engine):
+        """10-digit ISBN should not be flagged as phone."""
+        text = "ISBN: 0471958697 is the book identifier."
+        results = engine.detect(text, confidence_threshold=0.2)
+        phones = [r for r in results if r["category"] == "PHONE"]
+        assert len(phones) == 0
+
+    def test_year_not_zip(self, engine):
+        """A year in prose should not be a zip code."""
+        text = "The company was founded in 2024 by the board."
+        results = engine.detect(text, confidence_threshold=0.2)
+        addresses = [r for r in results if r["category"] == "ADDRESS"]
+        assert not any("2024" in a["original_value"] for a in addresses)
+
+    def test_financial_numbers_not_ssn(self, engine):
+        """Financial report numbers shouldn't trigger SSN detection."""
+        text = "Revenue was 458923100 dollars in Q3. Expenses were 312847000 dollars."
+        results = engine.detect(text, confidence_threshold=0.2)
+        ssns = [r for r in results if r["category"] == "SSN"]
+        assert len(ssns) == 0
+
+    def test_company_name_not_person(self, engine):
+        """Known organization patterns should not be flagged as names by our heuristic."""
+        text = "She works at Goldman Sachs and previously at Morgan Stanley."
+        results = engine.detect(text, confidence_threshold=0.2)
+        names = [r for r in results if r["category"] == "NAME"]
+        assert not any("Goldman Sachs" in n["original_value"] for n in names)
+        assert not any("Morgan Stanley" in n["original_value"] for n in names)
+
+    def test_month_day_not_name(self, engine):
+        """Month + day name pair should not be detected as a person name."""
+        text = "The event is on Saturday January at the conference center."
+        results = engine.detect(text, confidence_threshold=0.2)
+        names = [r for r in results if r["category"] == "NAME"]
+        assert not any("Saturday January" in n["original_value"] for n in names)

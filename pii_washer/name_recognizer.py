@@ -57,6 +57,17 @@ class DictionaryNameRecognizer(EntityRecognizer):
         with open(names_path, "r", encoding="utf-8") as f:
             self._first_names = set(json.load(f))
 
+        # Load multi-word exclusions (shared with CapitalizedPairRecognizer) so
+        # that known company/phrase pairs like "Morgan Stanley" are not flagged.
+        exclusions_path = DATA_DIR / "capitalized_word_exclusions.json"
+        with open(exclusions_path, "r", encoding="utf-8") as f:
+            excl_data = json.load(f)
+        self._multiword_exclusions: set[str] = set()
+        for category, values in excl_data.items():
+            for value in values:
+                if len(value.split()) > 1:
+                    self._multiword_exclusions.add(value.lower())
+
     def load(self):
         """Required by EntityRecognizer interface. No-op — data loaded in __init__."""
         pass
@@ -88,6 +99,9 @@ class DictionaryNameRecognizer(EntityRecognizer):
                 found_surname = True
 
             if found_surname:
+                matched_text = text[token.start():name_end]
+                if matched_text.lower() in self._multiword_exclusions:
+                    continue
                 results.append(RecognizerResult(
                     entity_type="PERSON",
                     start=token.start(),
