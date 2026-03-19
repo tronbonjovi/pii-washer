@@ -1,7 +1,7 @@
 import pytest
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from pii_washer.name_recognizer import TitleNameRecognizer
+from pii_washer.name_recognizer import TitleNameRecognizer, DictionaryNameRecognizer
 
 
 @pytest.fixture(scope="module")
@@ -73,3 +73,42 @@ class TestTitleNameRecognizer:
         results = analyzer.analyze(text, language="en", entities=["PERSON"])
         title_results = [r for r in results if r.score == 0.7]
         assert len(title_results) == 0
+
+
+@pytest.fixture(scope="module")
+def dict_recognizer():
+    return DictionaryNameRecognizer()
+
+
+class TestDictionaryNameRecognizer:
+    def test_common_first_last(self, dict_recognizer):
+        text = "Jane Doe submitted the application."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert any("Jane" in text[r.start:r.end] for r in results)
+
+    def test_case_insensitive_lookup(self, dict_recognizer):
+        text = "JAMES Wilson was present."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert any("JAMES" in text[r.start:r.end] for r in results)
+
+    def test_first_name_with_two_surnames(self, dict_recognizer):
+        text = "Mary Jane Watson was there."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert len(results) >= 1
+
+    def test_no_match_non_name(self, dict_recognizer):
+        text = "The table was large and wooden."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert len(results) == 0
+
+    def test_no_match_first_name_alone(self, dict_recognizer):
+        """A first name without a capitalized surname should not match."""
+        text = "James went to the store."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert len(results) == 0
+
+    def test_confidence_is_0_4(self, dict_recognizer):
+        text = "Robert Smith attended the meeting."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        for r in results:
+            assert r.score == 0.4
