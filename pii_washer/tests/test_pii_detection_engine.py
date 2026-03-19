@@ -244,17 +244,25 @@ def test_detect_full_address_components(engine):
 # --- DOB Detection (Context-Filtered) ---
 
 def test_detect_dob_with_context(engine):
+    # "born on" keyword is within 100 chars of March 5 → high confidence DOB.
+    # A date far from any keyword → surfaces at 0.2 (Task 12 keywordless behavior).
     text = (
         "Patient was born on March 5, 1990. "
-        "The patient was then referred to another facility and admitted on June 1, 2024."
+        "The patient was then referred to another facility. "
+        "Three months later, a follow-up was scheduled for a routine checkup "
+        "and the admission date was recorded as June 1, 2024."
     )
     results = engine.detect(text)
     dobs = [r for r in results if r["category"] == "DOB"]
     assert len(dobs) >= 1
-    # The DOB near "born on" should be detected
-    # The June 1 date should NOT be detected as DOB (no context keyword nearby)
-    for dob in dobs:
-        assert "June" not in dob["original_value"]
+    # The DOB near "born on" should be detected at > 0.2 confidence
+    context_dobs = [d for d in dobs if "March" in d["original_value"]]
+    assert len(context_dobs) >= 1
+    assert context_dobs[0]["confidence"] > 0.2
+    # June 1 is far from keywords → keywordless, surfaces at 0.2
+    no_context_dobs = [d for d in dobs if "June" in d["original_value"]]
+    for d in no_context_dobs:
+        assert d["confidence"] == 0.2
 
 
 def test_detect_dob_keyword_dob(engine):
@@ -265,10 +273,17 @@ def test_detect_dob_keyword_dob(engine):
 
 
 def test_no_dob_without_context(engine):
+    # Task 12: dates without context now surface at 0.2 instead of being dropped.
+    # Use a high threshold to verify they are NOT high-confidence detections.
     text = "The meeting is scheduled for January 15, 2025 at 3pm."
-    results = engine.detect(text)
-    dobs = [r for r in results if r["category"] == "DOB"]
-    assert len(dobs) == 0
+    results_high = engine.detect(text, confidence_threshold=0.3)
+    dobs_high = [r for r in results_high if r["category"] == "DOB"]
+    assert len(dobs_high) == 0, "Contextless dates should not appear at >= 0.3 confidence"
+    # At default threshold they appear but at very low confidence
+    results_default = engine.detect(text)
+    dobs_default = [r for r in results_default if r["category"] == "DOB"]
+    for d in dobs_default:
+        assert d["confidence"] == 0.2
 
 
 # --- URL Detection (PII-Filtered) ---
@@ -329,8 +344,10 @@ def test_detect_rich_document(engine):
 # --- No PII ---
 
 def test_detect_no_pii(engine):
+    # Task 12: "today" and similar words may be classified as DATE_TIME at very low confidence.
+    # Use a 0.3 threshold to verify no meaningful PII is found.
     text = "The weather today is sunny with a high of 75 degrees."
-    results = engine.detect(text)
+    results = engine.detect(text, confidence_threshold=0.3)
     assert results == []
 
 
@@ -455,3 +472,493 @@ def test_output_compatible_with_session_storage(engine):
         enriched = {**det, "placeholder": "[Test_1]", "status": "pending"}
         required_keys = {"id", "category", "original_value", "placeholder", "status", "positions", "confidence"}
         assert required_keys == set(enriched.keys())
+
+
+# =============================================================================
+# Task 5: Name recognizer integration tests
+# =============================================================================
+
+def test_name_jane_doe(engine):
+    """Key case from roadmap: Jane Doe detected as NAME."""
+    text = "The report was filed by Jane Doe last week."
+    results = engine.detect(text)
+    names = [r for r in results if r["category"] == "NAME"]
+    assert any("Jane" in n["original_value"] for n in names), "Jane Doe should be detected as NAME"
+
+
+def test_name_title_based(engine):
+    """Title-based detection: Mr. Smith."""
+    text = "Please contact Mr. Smith for further assistance."
+    results = engine.detect(text)
+    names = [r for r in results if r["category"] == "NAME"]
+    assert any("Smith" in n["original_value"] for n in names)
+
+
+def test_name_dictionary_based(engine):
+    """Dictionary name: Robert Chen."""
+    text = "We received the invoice from Robert Chen yesterday."
+    results = engine.detect(text)
+    names = [r for r in results if r["category"] == "NAME"]
+    assert any("Robert" in n["original_value"] for n in names)
+
+
+def test_name_unusual_heuristic(engine):
+    """Unusual name detected by capitalized-pair heuristic: Kazimir Volkov."""
+    text = "The package was delivered to Kazimir Volkov at the office."
+    results = engine.detect(text)
+    names = [r for r in results if r["category"] == "NAME"]
+    assert any("Kazimir" in n["original_value"] for n in names)
+
+
+def test_name_no_duplicate_spans(engine):
+    """No duplicate spans when NER and a custom recognizer both catch the same name."""
+    text = "Robert Chen submitted the form."
+    results = engine.detect(text)
+    spans = [(r["positions"][0]["start"], r["positions"][0]["end"]) for r in results]
+    assert len(spans) == len(set(spans)), "Duplicate spans should be removed"
+
+
+# =============================================================================
+# Task 6: SSN pattern hardening tests
+# =============================================================================
+
+def test_ssn_spaced(engine):
+    """SSN with spaces: 219 09 9999."""
+    text = "SSN: 219 09 9999"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) >= 1
+    assert "219" in ssns[0]["original_value"]
+
+
+def test_ssn_dotted(engine):
+    """SSN with dots: 219.09.9999."""
+    text = "SSN: 219.09.9999"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) >= 1
+
+
+def test_ssn_no_separator_with_context(engine):
+    """9-digit SSN without separator + context keyword → detected."""
+    text = "social security 219099999 on file"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) >= 1
+
+
+def test_ssn_no_separator_without_context(engine):
+    """9-digit number without SSN context → should NOT be detected."""
+    text = "The order number is 219099999 and it was shipped."
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) == 0
+
+
+def test_ssn_mixed_separators(engine):
+    """SSN with mixed separators: 219-09.9999."""
+    text = "SSN: 219-09.9999"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) >= 1
+
+
+def test_ssn_invalid_area_000(engine):
+    """Area 000 is invalid — should NOT match."""
+    text = "SSN: 000-12-3456"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) == 0
+
+
+def test_ssn_invalid_area_666(engine):
+    """Area 666 is invalid — should NOT match."""
+    text = "SSN: 666-12-3456"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) == 0
+
+
+def test_ssn_invalid_area_9xx(engine):
+    """Area starting with 9 is invalid (ITIN range) — should NOT match."""
+    text = "SSN: 912-34-5678"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) == 0
+
+
+def test_ssn_invalid_group_00(engine):
+    """Group 00 is invalid — should NOT match."""
+    text = "SSN: 219-00-9999"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) == 0
+
+
+def test_ssn_invalid_serial_0000(engine):
+    """Serial 0000 is invalid — should NOT match."""
+    text = "SSN: 219-09-0000"
+    results = engine.detect(text)
+    ssns = [r for r in results if r["category"] == "SSN"]
+    assert len(ssns) == 0
+
+
+def test_ssn_context_boost(engine):
+    """Context keyword nearby should boost confidence."""
+    text_with_context = "ssn: 219-09-9999"
+    text_without_context = "number: 219-09-9999"
+    results_with = engine.detect(text_with_context)
+    results_without = engine.detect(text_without_context)
+    ssns_with = [r for r in results_with if r["category"] == "SSN"]
+    ssns_without = [r for r in results_without if r["category"] == "SSN"]
+    assert len(ssns_with) >= 1
+    assert len(ssns_without) >= 1
+    assert ssns_with[0]["confidence"] > ssns_without[0]["confidence"]
+
+
+# =============================================================================
+# Task 7: Phone number pattern hardening tests
+# =============================================================================
+
+def test_phone_dots(engine):
+    """Phone with dots: 512.555.1234."""
+    text = "Call me at 512.555.1234."
+    results = engine.detect(text)
+    phones = [r for r in results if r["category"] == "PHONE"]
+    assert len(phones) >= 1
+    assert "512" in phones[0]["original_value"]
+
+
+def test_phone_spaces(engine):
+    """Phone with spaces: 512 555 1234."""
+    text = "Call me at 512 555 1234."
+    results = engine.detect(text)
+    phones = [r for r in results if r["category"] == "PHONE"]
+    assert len(phones) >= 1
+
+
+def test_phone_no_separator_with_context(engine):
+    """10-digit phone without separator + context keyword → detected."""
+    text = "Call 5125551234 for support."
+    results = engine.detect(text)
+    phones = [r for r in results if r["category"] == "PHONE"]
+    assert len(phones) >= 1
+
+
+def test_phone_no_separator_without_context(engine):
+    """10-digit number without phone context → should NOT be detected."""
+    text = "The ID number is 5125551234 for this record."
+    results = engine.detect(text)
+    phones = [r for r in results if r["category"] == "PHONE"]
+    assert len(phones) == 0
+
+
+def test_phone_mixed_parens_dots(engine):
+    """Mixed format: (512) 555.1234."""
+    text = "Office: (512) 555.1234"
+    results = engine.detect(text)
+    phones = [r for r in results if r["category"] == "PHONE"]
+    assert len(phones) >= 1
+
+
+def test_phone_country_code(engine):
+    """Phone with country code: +1-512-555-1234."""
+    text = "International: +1-512-555-1234"
+    results = engine.detect(text)
+    phones = [r for r in results if r["category"] == "PHONE"]
+    assert len(phones) >= 1
+
+
+def test_phone_with_extension(engine):
+    """Phone with extension: 512.555.1234 ext. 42."""
+    text = "Office: 512.555.1234 ext. 42"
+    results = engine.detect(text)
+    phones = [r for r in results if r["category"] == "PHONE"]
+    assert len(phones) >= 1
+
+
+# =============================================================================
+# Task 8: Address pattern hardening tests
+# =============================================================================
+
+def test_address_with_apartment(engine):
+    """Street address with apartment suffix."""
+    text = "She moved to 742 Evergreen Terrace Apt 3B last month."
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("742" in a["original_value"] for a in addresses)
+
+
+def test_address_with_unit_hash(engine):
+    """Street address with unit/# suffix."""
+    text = "Deliver to 100 Main Street # 5A please."
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("100" in a["original_value"] for a in addresses)
+
+
+def test_address_po_box(engine):
+    """PO Box detection."""
+    text = "Send mail to P.O. Box 1234 for processing."
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("Box" in a["original_value"] or "1234" in a["original_value"] for a in addresses)
+
+
+def test_address_po_box_post_office(engine):
+    """PO Box with 'Post Office Box' format."""
+    text = "Return address: Post Office Box 5678, Chicago IL 60601"
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("5678" in a["original_value"] or "Post" in a["original_value"] for a in addresses)
+
+
+def test_address_highway(engine):
+    """Highway/route address."""
+    text = "The warehouse is at 1200 Highway 35 near the interchange."
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("1200" in a["original_value"] for a in addresses)
+
+
+def test_address_route(engine):
+    """Route address."""
+    text = "They live at 340 Route 9 in the rural area."
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("340" in a["original_value"] for a in addresses)
+
+
+# =============================================================================
+# Task 9: Credit card pattern hardening tests
+# =============================================================================
+
+def test_ccn_spaces(engine):
+    """Credit card with spaces: 4111 1111 1111 1111."""
+    text = "Card number: 4111 1111 1111 1111"
+    results = engine.detect(text)
+    ccns = [r for r in results if r["category"] == "CCN"]
+    assert len(ccns) >= 1
+
+
+def test_ccn_no_separator(engine):
+    """Credit card without separators: 4111111111111111."""
+    text = "Card: 4111111111111111"
+    results = engine.detect(text)
+    ccns = [r for r in results if r["category"] == "CCN"]
+    assert len(ccns) >= 1
+
+
+def test_ccn_dots(engine):
+    """Credit card with dots: 4111.1111.1111.1111."""
+    text = "Payment: 4111.1111.1111.1111"
+    results = engine.detect(text)
+    ccns = [r for r in results if r["category"] == "CCN"]
+    assert len(ccns) >= 1
+
+
+def test_ccn_invalid_luhn_rejected(engine):
+    """Invalid Luhn number should NOT be detected."""
+    text = "Card: 4111 1111 1111 1112"
+    results = engine.detect(text)
+    ccns = [r for r in results if r["category"] == "CCN"]
+    # The modified last digit breaks Luhn — should not match
+    assert len(ccns) == 0
+
+
+# =============================================================================
+# Task 10: IP address enhancement tests
+# =============================================================================
+
+def test_ip_v4_with_port(engine):
+    """IPv4 with port: 192.168.1.100:8080."""
+    text = "The server is at 192.168.1.100:8080 on the LAN."
+    results = engine.detect(text)
+    ips = [r for r in results if r["category"] == "IP"]
+    assert any("192.168.1.100" in ip["original_value"] for ip in ips)
+
+
+def test_ip_v6_full(engine):
+    """Full IPv6 address."""
+    text = "Connect to 2001:0db8:85a3:0000:0000:8a2e:0370:7334 for the service."
+    results = engine.detect(text)
+    ips = [r for r in results if r["category"] == "IP"]
+    assert len(ips) >= 1
+    assert "2001" in ips[0]["original_value"]
+
+
+def test_ip_v6_compressed(engine):
+    """Compressed IPv6 address."""
+    text = "IPv6 address: 2001:db8::1 is the host."
+    results = engine.detect(text)
+    ips = [r for r in results if r["category"] == "IP"]
+    assert len(ips) >= 1
+
+
+def test_ip_loopback_excluded(engine):
+    """IPv6 loopback ::1 should NOT be flagged."""
+    text = "The loopback address ::1 is used for local testing."
+    results = engine.detect(text)
+    ips = [r for r in results if r["category"] == "IP"]
+    loopback = [ip for ip in ips if ip["original_value"].strip() == "::1"]
+    assert len(loopback) == 0
+
+
+def test_ip_link_local_excluded(engine):
+    """IPv6 link-local fe80:: should NOT be flagged."""
+    text = "Link-local address fe80::1 is assigned automatically."
+    results = engine.detect(text)
+    ips = [r for r in results if r["category"] == "IP"]
+    link_local = [ip for ip in ips if ip["original_value"].lower().startswith("fe80::")]
+    assert len(link_local) == 0
+
+
+# =============================================================================
+# Task 11: Email enhancement tests
+# =============================================================================
+
+def test_email_plus_addressing(engine):
+    """Plus addressing should already work via Presidio."""
+    text = "Send to john+filter@example.com please."
+    results = engine.detect(text)
+    emails = [r for r in results if r["category"] == "EMAIL"]
+    assert len(emails) >= 1
+
+
+def test_email_subdomain(engine):
+    """Subdomain email should work via Presidio."""
+    text = "My work email is alice@mail.company.org"
+    results = engine.detect(text)
+    emails = [r for r in results if r["category"] == "EMAIL"]
+    assert len(emails) >= 1
+
+
+def test_email_obfuscated_at_brackets(engine):
+    """Obfuscated [at] email detected."""
+    text = "Contact me at john.smith[at]example.com for help."
+    results = engine.detect(text)
+    emails = [r for r in results if r["category"] == "EMAIL"]
+    assert len(emails) >= 1
+    assert "john.smith" in emails[0]["original_value"]
+
+
+def test_email_obfuscated_at_parens(engine):
+    """Obfuscated (at) email detected."""
+    text = "Reach out to alice(at)company.org for info."
+    results = engine.detect(text)
+    emails = [r for r in results if r["category"] == "EMAIL"]
+    assert len(emails) >= 1
+
+
+def test_email_obfuscated_dot(engine):
+    """Obfuscated [dot] TLD detected."""
+    text = "Email bob@example[dot]com for pricing."
+    results = engine.detect(text)
+    emails = [r for r in results if r["category"] == "EMAIL"]
+    assert len(emails) >= 1
+
+
+# =============================================================================
+# Task 12: Context filter loosening tests
+# =============================================================================
+
+def test_dob_keyword_dob_dotted(engine):
+    """d.o.b keyword triggers DOB detection."""
+    text = "d.o.b: 03/15/1985"
+    results = engine.detect(text)
+    dobs = [r for r in results if r["category"] == "DOB"]
+    assert len(dobs) >= 1
+
+
+def test_dob_keyword_born_on(engine):
+    """'born on' triggers DOB detection."""
+    text = "She was born on April 22, 1990."
+    results = engine.detect(text)
+    dobs = [r for r in results if r["category"] == "DOB"]
+    assert len(dobs) >= 1
+
+
+def test_dob_keyword_birth_year(engine):
+    """'birth year' triggers DOB detection."""
+    text = "Birth year: 1978"
+    results = engine.detect(text)
+    dobs = [r for r in results if r["category"] == "DOB"]
+    assert len(dobs) >= 1
+
+
+def test_dob_keywordless_low_confidence(engine):
+    """Date without context keyword surfaces at confidence 0.2."""
+    text = "The conference will be held on September 14, 2026 in Seattle."
+    results = engine.detect(text)
+    dobs = [r for r in results if r["category"] == "DOB"]
+    # If detected, must be at 0.2
+    for d in dobs:
+        assert d["confidence"] == 0.2
+
+
+def test_zip_city_context(engine):
+    """City name triggers zip code detection."""
+    text = "Shipment heading to Chicago 60601 warehouse."
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("60601" in a["original_value"] for a in addresses)
+
+
+def test_zip_keyword_context(engine):
+    """'zip code' keyword triggers zip detection."""
+    text = "Please enter your zip code: 90210"
+    results = engine.detect(text)
+    addresses = [r for r in results if r["category"] == "ADDRESS"]
+    assert any("90210" in a["original_value"] for a in addresses)
+
+
+def test_url_reddit_user(engine):
+    """Reddit user URL detected."""
+    text = "My Reddit is https://reddit.com/user/johndoe"
+    results = engine.detect(text)
+    urls = [r for r in results if r["category"] == "URL"]
+    assert len(urls) >= 1
+
+
+def test_url_tiktok(engine):
+    """TikTok profile URL detected."""
+    text = "Follow me on https://tiktok.com/@myhandle"
+    results = engine.detect(text)
+    urls = [r for r in results if r["category"] == "URL"]
+    assert len(urls) >= 1
+
+
+def test_url_profile_path_heuristic(engine):
+    """Generic /user/ path heuristic detected."""
+    text = "See profile at https://example.com/user/janedoe"
+    results = engine.detect(text)
+    urls = [r for r in results if r["category"] == "URL"]
+    assert len(urls) >= 1
+
+
+def test_url_profile_path_not_settings(engine):
+    """Settings URL should NOT trigger profile heuristic."""
+    text = "Go to https://example.com/user/settings to update preferences."
+    results = engine.detect(text)
+    urls = [r for r in results if r["category"] == "URL"]
+    # /user/settings should be excluded
+    settings_urls = [u for u in urls if "settings" in u["original_value"]]
+    assert len(settings_urls) == 0
+
+
+# =============================================================================
+# Task 13: Default threshold tests
+# =============================================================================
+
+def test_default_threshold_is_0_2(engine):
+    """Default confidence threshold is 0.2."""
+    from pii_washer.pii_detection_engine import PIIDetectionEngine
+    assert PIIDetectionEngine.DEFAULT_CONFIDENCE_THRESHOLD == 0.2
+
+
+def test_detect_signature_default_is_0_2(engine):
+    """detect() default threshold is 0.2 — lower threshold finds >= as many results."""
+    text = "Contact john@example.com for details."
+    results_02 = engine.detect(text, confidence_threshold=0.2)
+    results_03 = engine.detect(text, confidence_threshold=0.3)
+    assert len(results_02) >= len(results_03)
