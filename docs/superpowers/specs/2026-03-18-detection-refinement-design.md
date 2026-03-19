@@ -15,7 +15,7 @@ spaCy NER is the only current path for name detection. When it misses obvious na
 
 **Pattern:** Title prefix followed by 1-3 capitalized words.
 
-Titles: Mr, Mrs, Ms, Miss, Dr, Prof, Professor, Rev, Reverend, Sr, Jr, Sgt, Sargent, Cpl, Corporal, Pvt, Private, Lt, Lieutenant, Capt, Captain, Maj, Major, Col, Colonel, Gen, General, Hon, Honorable, Judge, Justice, Sen, Senator, Rep, Representative, Gov, Governor, Pres, President
+Titles: Mr, Mrs, Ms, Miss, Dr, Prof, Professor, Rev, Reverend, Sr, Jr, Sgt, Sergeant, Cpl, Corporal, Pvt, Private, Lt, Lieutenant, Capt, Captain, Maj, Major, Col, Colonel, Gen, General, Hon, Honorable, Judge, Justice, Sen, Senator, Rep, Representative, Gov, Governor, Pres, President
 
 Each title matches with or without a trailing period. Pattern example:
 ```
@@ -46,15 +46,15 @@ Built as a Presidio recognizer that dynamically generates patterns from the dict
 
 ### 1c. Capitalized Word Pair Heuristic
 
-**Pattern:** Two or more adjacent capitalized words that:
-- Are NOT at the start of a sentence (preceded by `. `, `\n`, or start-of-text)
-- Are NOT common non-name capitalized phrases (filtered via a small exclusion list: month names, day names, common organization words like "Inc", "LLC", "Corp", state names, city names)
+**Pattern:** Two or more adjacent capitalized words that are not at the start of a sentence and are not common non-name phrases.
 
-```
-(?<![.!?\n]\s)(?<![.!?\n]\s\s)[A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2}
-```
+Implemented as a custom `EntityRecognizer` (not regex-only) that:
+1. Finds all sequences of 2-3 adjacent capitalized words in the text
+2. Checks preceding context programmatically to filter out sentence starts — accounts for period+space, newline, colon, bullet/dash markers, numbered list markers (`1. `), tab, `>` (quoted text), and start-of-text
+3. Filters matches against an exclusion list stored as `pii_washer/data/capitalized_word_exclusions.json` containing: month names, day names, US state names, top 200 US city names, common organization suffixes (Inc, LLC, Corp, Ltd, Co, Foundation, Association, Institute, University, College, Hospital, etc.), country names, language names, and common two-word non-name phrases
+4. Returns remaining matches as potential names
 
-Post-match filtering removes hits that match the exclusion list.
+The exclusion list will need iterative tuning as false positives are discovered in real usage. It lives in a data file (not code constants) so it can be updated without code changes.
 
 **Confidence:** 0.3
 **Entity type:** `PERSON` (maps to `NAME`)
@@ -75,9 +75,9 @@ All three layers feed into Presidio's standard analyzer pipeline. Presidio's bui
 |--------|---------|------------|
 | Dashed (existing) | `123-45-6789` | 0.85 (existing) |
 | Spaces | `123 45 6789` | 0.7 |
-| No separators | `123456789` | 0.4 |
+| No separators (context required) | `123456789` | 0.4 (only flagged when SSN keywords nearby) |
 | Dots | `123.45.6789` | 0.65 |
-| Mixed | `123 45-6789` | 0.6 |
+| Mixed (any combo of space/dash/dot) | `123 45-6789`, `123.45 6789` | 0.6 |
 
 **Validation rules (all formats):**
 - First group: 3 digits, not `000`, not `666`, not `9xx`
@@ -102,7 +102,7 @@ These are real SSA validation rules that reduce false positives.
 |--------|---------|------------|
 | Dots | `555.867.5309` | 0.65 |
 | Spaces | `555 867 5309` | 0.55 |
-| No separators (10-digit) | `5558675309` | 0.4 |
+| No separators (context required) | `5558675309` | 0.4 (only flagged when phone keywords nearby: call, phone, tel, cell, mobile, fax, contact) |
 | Mixed separators | `(555) 867.5309` | 0.65 |
 | With country code variations | `1-555-867-5309`, `+1.555.867.5309` | 0.7 |
 | With extension | `555-867-5309 ext 123`, `555-867-5309 x123` | 0.7 |
@@ -126,10 +126,10 @@ These are real SSA validation rules that reduce false positives.
 |---------|---------|------------|
 | Apartment/suite/unit | `123 Main St Apt 4B`, `123 Main St #4B`, `Suite 200` | Same as base address |
 | PO Box | `P.O. Box 123`, `PO Box 123`, `POB 123`, `Post Office Box 123` | 0.7 |
-| Common street type misspellings | `Steet`, `Avnue`, `Bouelvard`, `Driven` | 0.5 (lower due to uncertain match) |
+| Common street type misspellings | `Steet`, `Stret`, `Avnue`, `Aveneue`, `Bulevard`, `Bouelvard` | 0.5 (lower due to uncertain match, excludes real English words) |
 | Highway addresses | `123 Highway 101`, `123 Hwy 101`, `123 Route 66`, `123 Rte 66` | 0.65 |
 
-**Implementation:** Extend the existing `US_STREET_ADDRESS` pattern recognizer with additional patterns. Add a new `US_PO_BOX` pattern recognizer.
+**Implementation:** Extend the existing `US_STREET_ADDRESS` pattern recognizer with additional patterns. Add a new `US_PO_BOX` pattern recognizer. `US_PO_BOX` maps to `ADDRESS` in `ENTITY_MAPPING`.
 
 ---
 
@@ -145,9 +145,9 @@ These are real SSA validation rules that reduce false positives.
 | No separators | `4111111111111111` | 0.5 |
 | Dots | `4111.1111.1111.1111` | 0.6 |
 
-**Validation:** Luhn algorithm check on all formats. Presidio's built-in recognizer already does this — ensure custom patterns still run through Luhn validation.
+**Validation:** Luhn algorithm check on all formats. Presidio's built-in `CreditCardRecognizer` is a subclass with custom Luhn logic, not a plain `PatternRecognizer`. The implementation should either subclass `CreditCardRecognizer` to add new patterns, or implement a custom `EntityRecognizer` that includes Luhn validation in its `analyze()` method.
 
-**Implementation:** Custom `PatternRecognizer` supplementing the built-in `CREDIT_CARD` recognizer.
+**Implementation:** Custom recognizer extending or wrapping Presidio's built-in `CreditCardRecognizer`.
 
 ---
 
@@ -211,7 +211,7 @@ These are real SSA validation rules that reduce false positives.
 
 **Changes:**
 - Add platforms: Reddit, TikTok, Medium, YouTube, Pinterest, Tumblr, Mastodon, Threads, Bluesky, Stack Overflow, GitLab, Bitbucket
-- Add profile path heuristic: flag URLs containing patterns like `/user/`, `/u/`, `/profile/`, `/~`, `/people/`, `/@` at confidence 0.4
+- Add profile path heuristic: flag URLs containing patterns like `/user/`, `/u/`, `/profile/`, `/~`, `/people/`, `/@` followed by what looks like a username (alphanumeric + hyphens/underscores, not another path word like "settings" or "update") at confidence 0.4
 
 ---
 
@@ -228,12 +228,13 @@ All changes use existing Presidio recognizer patterns and spaCy. The only new as
 | `pii_washer/data/common_first_names.json` | Census-derived first name list (~1000 names) |
 | `pii_washer/data/us_cities_top200.json` | Top 200 US city names for ZIP context matching |
 | `pii_washer/name_recognizer.py` | Custom Presidio `EntityRecognizer` for dictionary-based name detection |
+| `pii_washer/data/capitalized_word_exclusions.json` | Exclusion list for capitalized word pair heuristic (month/day names, cities, states, org suffixes, etc.) |
 
 ### Modified files
 
 | File | Changes |
 |------|---------|
-| `pii_washer/pii_detection_engine.py` | Register new recognizers, update context filters, add new patterns, update constants |
+| `pii_washer/pii_detection_engine.py` | Register new recognizers, update context filters, add new patterns, update constants, add `ENTITY_MAPPING` entries for `US_PO_BOX` -> `ADDRESS` |
 | `pii_washer/tests/test_pii_detection_engine.py` | New test cases for all new patterns and formats |
 
 ### Recognizer registration
@@ -291,13 +292,17 @@ For each category (SSN, phone, address, CCN, IP, email), add:
 | Low | 0.3 - 0.4 | Speculative match (capitalized word pairs, no-separator numbers, keywordless dates) |
 | Very low | 0.2 | Wide-net catch (dates without context keywords) |
 
-The default confidence threshold remains 0.3, meaning very-low-confidence detections (0.2) won't show up unless the threshold is lowered. This is intentional — keywordless date detection is the most aggressive change and should be opt-in initially. We can lower the default threshold in a follow-up if the false positive rate is acceptable.
-
-**Update:** Given the "catch more, review more" philosophy, we should lower the default threshold to 0.2 so these show up for review. If false positives are too noisy, we dial it back.
+The default confidence threshold changes from 0.3 to 0.2, consistent with the "catch more, review more" philosophy. This means keywordless date detection and all other low-confidence matches surface for user review. If false positives prove too noisy in practice, we dial the threshold back up.
 
 ---
 
-## 12. What This Does NOT Cover
+## 12. Performance
+
+Adding new recognizers and wider patterns increases per-document analysis time. Run before/after benchmarks on representative documents (1-page letter, 3-page medical record, 5-page contract) to confirm latency stays acceptable. The name dictionary set lookup is O(1) per token, so the main cost is additional regex passes. Target: no more than 2x slowdown from current baseline.
+
+---
+
+## 13. What This Does NOT Cover
 
 - International PII formats (deferred)
 - UI changes for reviewing more detections (separate roadmap item)
