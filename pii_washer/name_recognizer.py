@@ -91,6 +91,8 @@ class DictionaryNameRecognizer(EntityRecognizer):
                 next_token = tokens[i + j]
                 next_word = next_token.group()
                 gap = text[name_end:next_token.start()]
+                if "\n" in gap:
+                    break
                 if gap.strip() != "":
                     break
                 if not next_word[0].isupper() or not next_word[1:].islower():
@@ -169,7 +171,14 @@ class CapitalizedPairRecognizer(EntityRecognizer):
 
     def analyze(self, text, entities, nlp_artifacts=None, regex_flags=0):
         results = []
-        pattern = re.compile(r"\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})\b")
+        # [^\S\n]+ matches whitespace except newlines — prevents spans bleeding across lines
+        pattern = re.compile(r"\b([A-Z][a-z]+(?:[^\S\n]+[A-Z][a-z]+){1,2})\b")
+
+        # Precompute bracket/paren regions to skip enclosed text (UI labels, etc.)
+        bracket_regions = [
+            (m.start(), m.end())
+            for m in re.finditer(r"[\[(][^)\]]*[\])]", text)
+        ]
 
         for match in pattern.finditer(text):
             start = match.start()
@@ -177,6 +186,10 @@ class CapitalizedPairRecognizer(EntityRecognizer):
 
             # Filter: skip sentence starts
             if self._is_sentence_start(text, start):
+                continue
+
+            # Filter: skip matches inside brackets or parentheses
+            if any(bs <= start and match.end() <= be for bs, be in bracket_regions):
                 continue
 
             # Filter: skip if the full phrase matches a multi-word exclusion

@@ -113,6 +113,20 @@ class TestDictionaryNameRecognizer:
         for r in results:
             assert r.score == 0.4
 
+    def test_no_bleed_across_newline(self, dict_recognizer):
+        """Name span must not absorb tokens from the next line."""
+        text = "Jane Smith\nCustomer Support\nExampleBank"
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        for r in results:
+            matched = text[r.start:r.end]
+            assert "\n" not in matched, f"Match bled across newline: {matched!r}"
+
+    def test_same_line_still_matches(self, dict_recognizer):
+        """Names on the same line must still be detected after the newline fix."""
+        text = "Contact Jane Smith for details."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert any("Jane Smith" in text[r.start:r.end] for r in results)
+
 
 @pytest.fixture(scope="module")
 def cap_recognizer():
@@ -173,6 +187,35 @@ class TestCapitalizedPairRecognizer:
         results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
         texts = [text[r.start:r.end] for r in results]
         assert any("Steven" in t and "Park" in t for t in texts)
+
+    def test_no_match_inside_brackets(self, cap_recognizer):
+        """Capitalized words inside square brackets are UI labels, not names."""
+        text = "Click [Verify My Account] to continue."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Verify" in t for t in texts)
+
+    def test_no_match_inside_parentheses(self, cap_recognizer):
+        """Capitalized words inside parentheses are typically not names."""
+        text = "See the form (Request Access Now) for details."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Request" in t for t in texts)
+
+    def test_no_bleed_across_newline(self, cap_recognizer):
+        """Capitalized pairs must not span across newlines."""
+        text = "the director, Jane Smith\nCustomer Support is here."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        for r in results:
+            matched = text[r.start:r.end]
+            assert "\n" not in matched, f"Match bled across newline: {matched!r}"
+
+    def test_same_line_still_matches(self, cap_recognizer):
+        """Names on the same line must still be detected after the newline fix."""
+        text = "The director, Marcus Chen, was there."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert any("Marcus" in t and "Chen" in t for t in texts)
 
     def test_confidence_is_0_3(self, cap_recognizer):
         text = "The director, Marcus Chen, spoke."

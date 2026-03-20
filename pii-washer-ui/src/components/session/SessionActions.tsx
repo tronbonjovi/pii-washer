@@ -27,9 +27,9 @@ export function SessionActions({ session }: SessionActionsProps) {
     exportSession.mutate(session.session_id, {
       onSuccess: (jsonString) => {
         try {
-          triggerDownload(jsonString, session);
+          const filename = triggerDownload(jsonString, session);
           setExportOpen(false);
-          toast.success('Session exported');
+          toast.success(`Exported ${filename} — check your Downloads folder`);
         } catch (error) {
           console.error('Failed to start session export download.', error);
           setExportError('Failed to start the export download.');
@@ -109,7 +109,7 @@ export function SessionActions({ session }: SessionActionsProps) {
  * Creates a temporary download link and programmatically clicks it
  * to trigger a browser file-save dialog.
  */
-function triggerDownload(jsonString: string, session: SessionListItem) {
+function triggerDownload(jsonString: string, session: SessionListItem): string {
   const blob = new Blob([jsonString], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
@@ -118,10 +118,12 @@ function triggerDownload(jsonString: string, session: SessionListItem) {
   const baseName = session.source_filename
     ? session.source_filename.replace(/\.[^.]+$/, '')
     : session.session_id;
-  anchor.download = `pii-washer-${baseName}.json`;
+  const filename = `pii-washer-${baseName}.json`;
+  anchor.download = filename;
 
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
+  return filename;
 }
