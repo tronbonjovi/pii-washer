@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 
 VALID_SOURCE_FORMATS = {".txt", ".md", "paste"}
 VALID_STATUSES = {
-    "user_input", "analyzed", "confirmed", "depersonalized",
+    "user_input", "analyzed", "depersonalized",
     "awaiting_response", "repersonalized", "closed",
 }
 SESSION_FIELDS = {

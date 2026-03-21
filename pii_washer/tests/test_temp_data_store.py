@@ -381,9 +381,6 @@ def test_full_lifecycle():
     }
     store.update_session(sid, {"pii_detections": [detection]})
 
-    # Confirm
-    store.update_session(sid, {"status": "confirmed"})
-
     # Depersonalize
     store.update_session(sid, {
         "status": "depersonalized",
