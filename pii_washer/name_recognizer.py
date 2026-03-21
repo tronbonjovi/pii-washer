@@ -198,6 +198,11 @@ class CapitalizedPairRecognizer(EntityRecognizer):
 
             words = matched_text.split()
 
+            # Filter: skip if immediately followed by colon (likely a field label)
+            after = text[match.end():match.end() + 2].lstrip()
+            if after.startswith(":"):
+                continue
+
             # Filter: skip if ANY word is an org suffix (e.g., "Acme Corp")
             if any(w.lower() in self._org_suffixes for w in words):
                 continue

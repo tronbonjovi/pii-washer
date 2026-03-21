@@ -222,3 +222,54 @@ class TestCapitalizedPairRecognizer:
         results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
         for r in results:
             assert r.score == 0.3
+
+    # --- Field label false positive tests ---
+
+    def test_no_match_field_label_full_name(self, cap_recognizer):
+        """'Full Name' as a form field label should not be flagged as a person name."""
+        text = "Please enter your Full Name and date of birth."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Full Name" in t for t in texts)
+
+    def test_no_match_field_label_phone_number(self, cap_recognizer):
+        """'Phone Number' should not be flagged as a person name."""
+        text = "Enter your Phone Number below."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Phone Number" in t for t in texts)
+
+    def test_no_match_field_label_email_address(self, cap_recognizer):
+        """'Email Address' should not be flagged as a person name."""
+        text = "Provide your Email Address for confirmation."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Email Address" in t for t in texts)
+
+    def test_no_match_field_label_date_of_birth(self, cap_recognizer):
+        """'Date of Birth' should not be flagged."""
+        text = "Your Date of Birth is required."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Date" in t for t in texts)
+
+    def test_no_match_colon_label_mid_sentence(self, cap_recognizer):
+        """Capitalized words followed by colon should be suppressed as labels."""
+        text = "fill in Full Name: John Alex Doe"
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Full Name" in t for t in texts)
+
+    def test_no_match_colon_label_street_address(self, cap_recognizer):
+        """'Street Address:' should be suppressed by colon filter."""
+        text = "enter your Street Address: 742 Evergreen Terrace"
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert not any("Street Address" in t for t in texts)
+
+    def test_colon_filter_does_not_suppress_non_label(self, cap_recognizer):
+        """Names NOT followed by colon should still be detected."""
+        text = "The defendant, Marcus Chen, pleaded not guilty."
+        results = cap_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        texts = [text[r.start:r.end] for r in results]
+        assert any("Marcus" in t and "Chen" in t for t in texts)
