@@ -3,6 +3,8 @@ from pathlib import Path
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
 
+from pii_washer.document_loader import DocumentLoader
+
 from .config import ALLOWED_EXTENSIONS, APP_VERSION
 from .errors import (
     _error_body,
@@ -113,7 +115,6 @@ async def upload_session(file: UploadFile, request: Request):
         )
 
     # Read content with streaming size check (1MB limit, aligned with DocumentLoader)
-    from pii_washer.document_loader import DocumentLoader
     max_size = DocumentLoader.MAX_FILE_SIZE
     chunks = []
     total = 0
