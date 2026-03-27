@@ -509,10 +509,13 @@ class PIIDetectionEngine:
         nlp_engine = provider.create_engine()
         self._analyzer = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
 
-        # Task 12: load city list for ZIP context
+        # Task 12: load city list for ZIP context — pre-compile as single alternation
         cities_path = DATA_DIR / "us_cities_top200.json"
         with open(cities_path, "r", encoding="utf-8") as f:
-            self._us_cities = set(json.load(f))
+            cities = json.load(f)
+        self._us_cities_pattern = re.compile(
+            r"\b(?:" + "|".join(re.escape(c.lower()) for c in cities) + r")\b"
+        )
 
         # Street address recognizer
         street_recognizer = PatternRecognizer(
@@ -663,10 +666,9 @@ class PIIDetectionEngine:
             if re.search(r"\b" + re.escape(st_type) + r"\.?\b", context, re.IGNORECASE):
                 return True
 
-        # Task 12: check for known city names (case-insensitive, whole word)
-        for city in self._us_cities:
-            if re.search(r"\b" + re.escape(city) + r"\b", context_lower):
-                return True
+        # Task 12: check for known city names (single pre-compiled regex)
+        if self._us_cities_pattern.search(context_lower):
+            return True
 
         return False
 
