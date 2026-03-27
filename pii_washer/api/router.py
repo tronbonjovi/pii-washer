@@ -3,7 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import JSONResponse, Response
 
-from .config import ALLOWED_EXTENSIONS, APP_VERSION, MAX_UPLOAD_SIZE_BYTES
+from .config import ALLOWED_EXTENSIONS, APP_VERSION
 from .errors import (
     _error_body,
     key_error_response,
@@ -112,16 +112,26 @@ async def upload_session(file: UploadFile, request: Request):
             ),
         )
 
-    # Read content and validate size
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_SIZE_BYTES:
-        return JSONResponse(
-            status_code=413,
-            content=_error_body(
-                "FILE_TOO_LARGE",
-                f"File exceeds the {MAX_UPLOAD_SIZE_BYTES // (1024 * 1024)} MB limit",
-            ),
-        )
+    # Read content with streaming size check (1MB limit, aligned with DocumentLoader)
+    from pii_washer.document_loader import DocumentLoader
+    max_size = DocumentLoader.MAX_FILE_SIZE
+    chunks = []
+    total = 0
+    while True:
+        chunk = await file.read(8192)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_size:
+            return JSONResponse(
+                status_code=413,
+                content=_error_body(
+                    "FILE_TOO_LARGE",
+                    f"File exceeds the {max_size // (1024 * 1024)} MB limit",
+                ),
+            )
+        chunks.append(chunk)
+    content = b"".join(chunks)
 
     # Decode in memory — never write PII to disk
     try:
@@ -137,10 +147,8 @@ async def upload_session(file: UploadFile, request: Request):
 
     try:
         sm = _sm(request)
-        session_id = sm.load_text(text)
+        session_id = sm.load_uploaded_content(text, suffix, file.filename)
         session = sm.get_session(session_id)
-        session["source_format"] = suffix
-        session["source_filename"] = file.filename
         return _to_session_created(session)
     except ValueError as exc:
         return value_error_response(exc)
