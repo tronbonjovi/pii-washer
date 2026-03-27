@@ -1066,3 +1066,13 @@ class TestFalsePositives:
         results = engine.detect(text, confidence_threshold=0.2)
         names = [r for r in results if r["category"] == "NAME"]
         assert not any("Saturday January" in n["original_value"] for n in names)
+
+
+# --- ZIP with city context (Bug #7 regression) ---
+
+def test_zip_with_city_context_detected(engine):
+    """Bug #7: city lookup should work (we're changing its internals to a compiled regex)."""
+    text = "I live in Chicago, IL 60601."
+    results = engine.detect(text)
+    zips = [r for r in results if r["category"] == "ADDRESS" and "60601" in r["original_value"]]
+    assert len(zips) >= 1, f"Expected ZIP 60601 to be detected with Chicago context, got: {[r['original_value'] for r in results]}"

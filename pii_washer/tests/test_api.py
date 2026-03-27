@@ -233,9 +233,24 @@ class TestFileUpload:
         assert r.status_code == 422
         assert r.json()["error"]["code"] == "UNSUPPORTED_FORMAT"
 
+    def test_upload_metadata_persists_on_subsequent_reads(self, client):
+        """Bug #1: source_format and source_filename must survive past the initial response."""
+        content = b"Hello, my name is John Smith."
+        r = client.post(
+            "/api/v1/sessions/upload",
+            files={"file": ("report.txt", io.BytesIO(content), "text/plain")},
+        )
+        assert r.status_code == 201
+        session_id = r.json()["session_id"]
+
+        r2 = client.get(f"/api/v1/sessions/{session_id}")
+        assert r2.status_code == 200
+        body = r2.json()
+        assert body["source_format"] == ".txt", f"Expected '.txt', got '{body['source_format']}'"
+        assert body["source_filename"] == "report.txt", f"Expected 'report.txt', got '{body['source_filename']}'"
+
     def test_upload_exceeding_size_limit_returns_413(self, client):
-        # Create content just over 10 MB
-        large_content = b"A" * (10 * 1024 * 1024 + 1)
+        large_content = b"A" * (1_048_576 + 1)
         r = client.post(
             "/api/v1/sessions/upload",
             files={"file": ("big.txt", io.BytesIO(large_content), "text/plain")},

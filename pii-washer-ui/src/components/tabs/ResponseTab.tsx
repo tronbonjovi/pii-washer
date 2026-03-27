@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSession, useSessionStatus } from '@/hooks/use-sessions';
 import { useLoadResponse, useRepersonalize } from '@/hooks/use-workflow';
 import { useSessionStore } from '@/store/session-store';
@@ -19,7 +19,7 @@ export function ResponseTab() {
 
   const [responseText, setResponseText] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [sessionSnapshot, setSessionSnapshot] = useState<string | null>(null);
+  const sessionSnapshotRef = useRef<string | null>(null);
 
   const loadResponse = useLoadResponse(activeSessionId ?? '');
   const repersonalize = useRepersonalize(activeSessionId ?? '');
@@ -31,14 +31,20 @@ export function ResponseTab() {
     : activeSessionId
       ? `loading:${activeSessionId}`
       : null;
-  if (sessionSnapshot !== snapshotKey) {
-    setSessionSnapshot(snapshotKey);
+
+  // Sync responseText when the session changes — legitimate "initialize controlled
+  // input from fetched data" pattern; not a cascading-render risk because the ref
+  // guard ensures it fires at most once per session snapshot.
+  useEffect(() => {
+    if (sessionSnapshotRef.current === snapshotKey) return;
+    sessionSnapshotRef.current = snapshotKey;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time init from server data, guarded by ref
     setResponseText(
       session?.status === 'awaiting_response' && session.response_text
         ? session.response_text
         : ''
     );
-  }
+  }, [snapshotKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!activeSessionId) {
     return (

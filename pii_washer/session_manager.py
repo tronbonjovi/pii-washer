@@ -74,6 +74,14 @@ class SessionManager:
         )
         return session_id
 
+    def load_uploaded_content(self, text, source_format, filename):
+        """Create a session from uploaded file content with correct metadata."""
+        normalized = self.document_loader.load_text(text)
+        session_id = self.store.create_session(
+            normalized["text"], source_format, filename
+        )
+        return session_id
+
     def analyze(self, session_id):
         session = self.store.get_session(session_id)
         status = session["status"]

@@ -99,6 +99,26 @@ class TestSessionCreation:
 
 
 # ---------------------------------------------------------------------------
+# Upload Content (load_uploaded_content)
+# ---------------------------------------------------------------------------
+
+class TestLoadUploadedContent:
+    def test_load_uploaded_content_preserves_format_and_filename(self, manager):
+        session_id = manager.load_uploaded_content("Hello world", ".txt", "report.txt")
+        session = manager.get_session(session_id)
+        assert session["source_format"] == ".txt"
+        assert session["source_filename"] == "report.txt"
+        assert session["original_text"] == "Hello world"
+        assert session["status"] == "user_input"
+
+    def test_load_uploaded_content_md_format(self, manager):
+        session_id = manager.load_uploaded_content("# Title\nBody", ".md", "notes.md")
+        session = manager.get_session(session_id)
+        assert session["source_format"] == ".md"
+        assert session["source_filename"] == "notes.md"
+
+
+# ---------------------------------------------------------------------------
 # Analysis
 # ---------------------------------------------------------------------------
 
