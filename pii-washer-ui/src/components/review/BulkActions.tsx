@@ -52,7 +52,7 @@ export function BulkActions({ sessionId, sessionStatus }: BulkActionsProps) {
           size="sm"
           className="w-full flex items-center gap-1.5"
           onClick={() => confirmAll.mutate()}
-          disabled={sessionStatus.pending_count === 0 || confirmAll.isPending}
+          disabled={sessionStatus.pending_count === 0 || !sessionStatus.can_edit_detections || confirmAll.isPending}
         >
           <CheckCheck className="h-3.5 w-3.5" />
           Confirm All ({sessionStatus.pending_count} pending)
