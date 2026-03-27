@@ -124,6 +124,6 @@ function triggerDownload(jsonString: string, session: SessionListItem): string {
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
   return filename;
 }
