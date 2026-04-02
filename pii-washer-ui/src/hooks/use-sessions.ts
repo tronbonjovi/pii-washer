@@ -1,23 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  listSessions,
   createSession,
   uploadFile,
   getSession,
   getSessionStatus,
-  deleteSession,
-  clearAllSessions,
-  exportSession,
-  importSession,
+  resetSession,
 } from '@/api/sessions';
 import { useSessionStore } from '@/store/session-store';
-
-export function useSessionList() {
-  return useQuery({
-    queryKey: ['sessions'],
-    queryFn: listSessions,
-  });
-}
 
 export function useSession(sessionId: string | null) {
   return useQuery({
@@ -61,50 +50,15 @@ export function useUploadFile() {
   });
 }
 
-export function useDeleteSession() {
+export function useResetSession() {
   const queryClient = useQueryClient();
-  const { activeSessionId, clearActiveSession } = useSessionStore();
+  const resetStore = useSessionStore((s) => s.resetSession);
 
   return useMutation({
-    mutationFn: (sessionId: string) => deleteSession(sessionId),
-    onSuccess: (_, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      queryClient.removeQueries({ queryKey: ['session', deletedId] });
-      if (activeSessionId === deletedId) {
-        clearActiveSession();
-      }
-    },
-  });
-}
-
-export function useClearAllSessions() {
-  const queryClient = useQueryClient();
-  const clearActiveSession = useSessionStore((s) => s.clearActiveSession);
-
-  return useMutation({
-    mutationFn: clearAllSessions,
+    mutationFn: resetSession,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      clearActiveSession();
-    },
-  });
-}
-
-export function useExportSession() {
-  return useMutation({
-    mutationFn: (sessionId: string) => exportSession(sessionId),
-  });
-}
-
-export function useImportSession() {
-  const queryClient = useQueryClient();
-  const setActiveSession = useSessionStore((s) => s.setActiveSession);
-
-  return useMutation({
-    mutationFn: (sessionData: string) => importSession(sessionData),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      setActiveSession(data.session_id);
+      queryClient.clear();
+      resetStore();
     },
   });
 }
