@@ -10,7 +10,7 @@ interface WorkflowNavProps {
 
 export function WorkflowNav({ back, next, startNew }: WorkflowNavProps) {
   const { setActiveTab } = useSessionStore();
-  const clearActiveSession = useSessionStore((s) => s.clearActiveSession);
+  const resetSession = useSessionStore((s) => s.resetSession);
 
   return (
     <div className="flex items-center justify-between border-t pt-3 mt-auto">
@@ -33,8 +33,7 @@ export function WorkflowNav({ back, next, startNew }: WorkflowNavProps) {
             variant="outline"
             size="sm"
             onClick={() => {
-              clearActiveSession();
-              setActiveTab('input');
+              resetSession();
             }}
             className="flex items-center gap-1.5"
           >
