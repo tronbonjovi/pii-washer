@@ -363,20 +363,8 @@ class SessionManager:
     def get_session(self, session_id):
         return self.store.get_session(session_id)
 
-    def list_sessions(self):
-        return self.store.list_sessions()
-
-    def delete_session(self, session_id):
-        return self.store.delete_session(session_id)
-
     def reset(self):
         return self.store.secure_clear()
-
-    def export_session(self, session_id):
-        return self.store.export_session(session_id)
-
-    def import_session(self, json_string):
-        return self.store.import_session(json_string)
 
     def get_session_status(self, session_id):
         session = self.store.get_session(session_id)
