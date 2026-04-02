@@ -10,13 +10,12 @@ Local-only PII detection and text sanitization. Paste text containing personal d
 2. **Work with clean text** — Copy the depersonalized version into ChatGPT, Claude, or any other tool. No real PII is transmitted.
 3. **Repersonalize** — Paste the AI's response back. Pii Washer swaps the placeholders for the original values, giving you a fully restored document.
 
-Sessions track all mappings, so you can process multiple documents and always get consistent placeholder assignments.
+Placeholder mappings are consistent within a session — the same name always gets the same placeholder. Use "Start Over" in the header to reset and begin a new task.
 
 ## Privacy
 
 - Runs entirely on your local machine — no network calls after initial setup.
-- Session data is held in memory only and securely cleared on shutdown.
-- Exported session files contain real PII — handle them carefully.
+- All data is held in memory only and securely cleared on reset or shutdown.
 
 ## Quick start
 
@@ -33,7 +32,8 @@ git clone https://github.com/tronbonjovi/pii-washer.git
 cd pii-washer
 
 # Backend
-py -3.13 -m venv .venv && .venv\Scripts\activate        # Windows
+python3.13 -m venv .venv && source .venv/bin/activate    # Linux/macOS
+# py -3.13 -m venv .venv && .venv\Scripts\activate       # Windows
 pip install -e .
 pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl
 
@@ -72,7 +72,7 @@ pii_washer/
   pii_detection_engine.py     # Presidio + spaCy NER + custom recognizers
   placeholder_generator.py    # Deterministic placeholder assignment ([TYPE_N])
   text_substitution_engine.py # Bidirectional text replacement
-  session_manager.py          # Session lifecycle, the API boundary for all operations
+  session_manager.py          # Workflow orchestration, the API boundary for all operations
   temp_data_store.py          # In-memory storage with secure clear
   tests/                      # Automated tests
 
