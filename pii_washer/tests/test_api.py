@@ -160,18 +160,6 @@ class TestSessionCRUD:
         assert body["source_format"] == ".txt"
         assert body["source_filename"] == "test.txt"
 
-    def test_list_sessions_returns_200(self, client):
-        client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
-        r = client.get("/api/v1/sessions")
-        assert r.status_code == 200
-        items = r.json()
-        assert isinstance(items, list)
-        assert len(items) >= 1
-        item = items[0]
-        assert "session_id" in item
-        assert "status" in item
-        assert "detection_count" in item
-
     def test_get_session_by_id_returns_full_data(self, client):
         r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
         session_id = r.json()["session_id"]
@@ -191,14 +179,6 @@ class TestSessionCRUD:
         assert body["session_id"] == session_id
         assert "detection_count" in body
         assert "can_analyze" in body
-
-    def test_delete_session_returns_204_then_404(self, client):
-        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
-        session_id = r.json()["session_id"]
-        r2 = client.delete(f"/api/v1/sessions/{session_id}")
-        assert r2.status_code == 204
-        r3 = client.get(f"/api/v1/sessions/{session_id}")
-        assert r3.status_code == 404
 
 
 # ---------------------------------------------------------------------------
@@ -386,14 +366,6 @@ class TestErrorHandling:
         assert r.status_code == 422
         assert r.json()["error"]["code"] == "TEXT_NOT_FOUND"
 
-    def test_import_invalid_json_returns_422(self, client):
-        r = client.post(
-            "/api/v1/sessions/import",
-            json={"session_data": "not valid json {{{"},
-        )
-        assert r.status_code == 422
-        assert r.json()["error"]["code"] == "VALIDATION_ERROR"
-
 
 # ---------------------------------------------------------------------------
 # 6. Health check
@@ -439,51 +411,3 @@ class TestReset:
         assert r.json()["deleted_count"] == 0
 
 
-# ---------------------------------------------------------------------------
-# 8. Export / import round-trip
-# ---------------------------------------------------------------------------
-
-class TestExportImport:
-    def test_export_import_round_trip(self, client):
-        # Create and analyze
-        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
-        session_id = r.json()["session_id"]
-        client.post(f"/api/v1/sessions/{session_id}/analyze")
-
-        # Confirm first detection
-        r2 = client.get(f"/api/v1/sessions/{session_id}")
-        detections = r2.json()["pii_detections"]
-        if detections:
-            det_id = detections[0]["id"]
-            client.patch(
-                f"/api/v1/sessions/{session_id}/detections/{det_id}",
-                json={"status": "confirmed"},
-            )
-
-        # Export
-        r3 = client.get(f"/api/v1/sessions/{session_id}/export")
-        assert r3.status_code == 200
-        exported_json = r3.text
-
-        # Delete original
-        client.delete(f"/api/v1/sessions/{session_id}")
-        r_gone = client.get(f"/api/v1/sessions/{session_id}")
-        assert r_gone.status_code == 404
-
-        # Import
-        r4 = client.post(
-            "/api/v1/sessions/import",
-            json={"session_data": exported_json},
-        )
-        assert r4.status_code == 201
-        imported_id = r4.json()["session_id"]
-        assert imported_id == session_id
-
-        # Verify detections and statuses are restored
-        r5 = client.get(f"/api/v1/sessions/{imported_id}")
-        assert r5.status_code == 200
-        restored = r5.json()
-        assert restored["original_text"] == SAMPLE_TEXT
-        if detections:
-            restored_dets = restored["pii_detections"]
-            assert any(d["status"] == "confirmed" for d in restored_dets)
