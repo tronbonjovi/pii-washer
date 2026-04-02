@@ -30,8 +30,10 @@ from .models import (
     RepersonalizeResponse,
     ResponseLoadedResponse,
     SessionCreatedResponse,
+    UpdateCheckResponse,
     UpdateDetectionStatusRequest,
 )
+from pii_washer.api.update_checker import check_for_updates
 
 router = APIRouter()
 
@@ -79,6 +81,16 @@ def health(request: Request):
         engine_available=sm.detection_engine is not None,
         version=APP_VERSION,
     )
+
+
+# ---------------------------------------------------------------------------
+# Updates
+# ---------------------------------------------------------------------------
+
+@router.get("/updates/check", response_model=UpdateCheckResponse)
+async def updates_check():
+    result = await check_for_updates()
+    return UpdateCheckResponse(**result)
 
 
 # ---------------------------------------------------------------------------

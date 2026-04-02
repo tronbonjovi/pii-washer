@@ -119,3 +119,11 @@ class ConfirmedCountResponse(BaseModel):
 class ResponseLoadedResponse(BaseModel):
     response_text: str
     status: str
+
+
+class UpdateCheckResponse(BaseModel):
+    current_version: str
+    latest_version: str | None
+    update_available: bool
+    release_url: str | None = None
+    error: str | None = None

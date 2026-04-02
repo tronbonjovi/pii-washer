@@ -162,3 +162,15 @@ export function isAPIError(error: unknown): error is APIError {
     'httpStatus' in error
   );
 }
+
+// ---------------------------------------------------------------------------
+// Update check
+// ---------------------------------------------------------------------------
+
+export interface UpdateCheckResponse {
+  current_version: string;
+  latest_version: string | null;
+  update_available: boolean;
+  release_url: string | null;
+  error: string | null;
+}

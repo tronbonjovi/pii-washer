@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useSessionStore, type TabId } from '@/store/session-store';
 import { useResetSession } from '@/hooks/use-sessions';
 import { ThemeToggle } from './ThemeToggle';
+import { SettingsMenu } from './SettingsMenu';
 import { useTheme } from '@/components/theme-provider';
 import logoDarkSrc from '@/assets/logo-darkmode.png';
 import logoLightSrc from '@/assets/logo-lightmode.png';
@@ -59,9 +60,10 @@ export function Header() {
         })}
       </nav>
 
-      {/* Right: Theme toggle + Start Over */}
+      {/* Right: Theme toggle + Settings + Start Over */}
       <div className="flex items-center gap-3">
         <ThemeToggle />
+        <SettingsMenu />
         {activeSessionId && (
           <Button
             variant="outline"
