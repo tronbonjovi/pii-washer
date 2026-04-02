@@ -25,7 +25,24 @@ desktop = [
 dev = [
     "pytest >= 9.0.0",
     "httpx >= 0.27.0",
+    "ruff >= 0.8.0",
 ]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+ignore = [
+    "E501",   # line length enforced loosely via line-length setting
+    "SIM102", # collapsible-if — often less readable when collapsed
+    "SIM103", # needless-bool — sometimes clearer to be explicit
+]
+
+[tool.ruff.lint.per-file-ignores]
+"pii_washer/tests/*" = ["B007", "F841"]
+"pii_washer/pii_detection_engine.py" = ["F841"]
 
 [tool.setuptools.packages.find]
 include = ["pii_washer*"]

@@ -1,10 +1,8 @@
-import json
 import time
 
 import pytest
 
 from pii_washer.temp_data_store import TempDataStore
-
 
 # --- Session Creation ---
 
@@ -153,82 +151,6 @@ def test_update_session_not_found():
         store.update_session("nonexistent", {"status": "analyzed"})
 
 
-# --- Session Deletion ---
-
-
-def test_delete_session():
-    store = TempDataStore()
-    sid = store.create_session("Hello", "paste")
-    store.delete_session(sid)
-    assert store.session_count() == 0
-    with pytest.raises(KeyError):
-        store.get_session(sid)
-
-
-def test_delete_session_not_found():
-    store = TempDataStore()
-    with pytest.raises(KeyError):
-        store.delete_session("nonexistent")
-
-
-def test_delete_one_of_many():
-    store = TempDataStore()
-    ids = [store.create_session(f"Text {i}", "paste") for i in range(3)]
-    store.delete_session(ids[1])
-    assert store.session_count() == 2
-    with pytest.raises(KeyError):
-        store.get_session(ids[1])
-    assert store.get_session(ids[0])["original_text"] == "Text 0"
-    assert store.get_session(ids[2])["original_text"] == "Text 2"
-
-
-# --- Session Listing ---
-
-
-def test_list_sessions_empty():
-    store = TempDataStore()
-    assert store.list_sessions() == []
-
-
-def test_list_sessions_content():
-    store = TempDataStore()
-    store.create_session("First", "paste")
-    time.sleep(0.01)
-    store.create_session("Second", ".md")
-    result = store.list_sessions()
-    assert len(result) == 2
-    expected_keys = {"session_id", "status", "source_format", "source_filename", "created_at", "updated_at"}
-    for entry in result:
-        assert set(entry.keys()) == expected_keys
-        assert "original_text" not in entry
-
-
-def test_list_sessions_sorted_newest_first():
-    store = TempDataStore()
-    sid_a = store.create_session("First", "paste")
-    time.sleep(0.01)
-    sid_b = store.create_session("Second", "paste")
-    result = store.list_sessions()
-    assert result[0]["session_id"] == sid_b
-
-
-# --- Clear All ---
-
-
-def test_clear_all():
-    store = TempDataStore()
-    for i in range(3):
-        store.create_session(f"Text {i}", "paste")
-    assert store.clear_all() == 3
-    assert store.session_count() == 0
-    assert store.list_sessions() == []
-
-
-def test_clear_all_empty():
-    store = TempDataStore()
-    assert store.clear_all() == 0
-
-
 # --- Secure Clear ---
 
 
@@ -256,107 +178,6 @@ def test_secure_clear_overwrites_sensitive_fields():
 def test_secure_clear_empty():
     store = TempDataStore()
     assert store.secure_clear() == 0
-
-
-# --- Export / Import ---
-
-
-def test_export_session():
-    store = TempDataStore()
-    sid = store.create_session("Test export", "paste")
-    exported = store.export_session(sid)
-    assert isinstance(exported, str)
-    parsed = json.loads(exported)
-    assert parsed["session_id"] == sid
-    assert parsed["original_text"] == "Test export"
-    assert parsed["status"] == "user_input"
-
-
-def test_export_session_not_found():
-    store = TempDataStore()
-    with pytest.raises(KeyError):
-        store.export_session("nonexistent")
-
-
-def test_import_session():
-    store = TempDataStore()
-    sid = store.create_session("Import test", "paste")
-    exported = store.export_session(sid)
-    store.delete_session(sid)
-    returned_id = store.import_session(exported)
-    assert returned_id == sid
-    session = store.get_session(sid)
-    assert session["original_text"] == "Import test"
-    assert store.session_count() == 1
-
-
-def test_import_session_duplicate():
-    store = TempDataStore()
-    sid = store.create_session("Dup test", "paste")
-    exported = store.export_session(sid)
-    with pytest.raises(ValueError, match="already exists"):
-        store.import_session(exported)
-
-
-def test_import_session_missing_field():
-    store = TempDataStore()
-    data = '{"session_id": "abc123", "created_at": "2026-01-01T00:00:00Z", "original_text": "test", "source_format": "paste"}'
-    with pytest.raises(ValueError, match="Missing required field"):
-        store.import_session(data)
-
-
-def test_import_session_invalid_json():
-    store = TempDataStore()
-    with pytest.raises(ValueError, match="Invalid JSON"):
-        store.import_session("not valid json{{{")
-
-
-def test_import_session_invalid_status_raises():
-    """Finding 5 regression: import must reject invalid status values."""
-    store = TempDataStore()
-    data = json.dumps({
-        "session_id": "abc123",
-        "created_at": "2026-01-01T00:00:00Z",
-        "status": "hacked",
-        "original_text": "test",
-        "source_format": "paste",
-    })
-    with pytest.raises(ValueError, match="Invalid status"):
-        store.import_session(data)
-
-
-def test_import_session_invalid_source_format_raises():
-    """Finding 5 regression: import must reject invalid source_format values."""
-    store = TempDataStore()
-    data = json.dumps({
-        "session_id": "abc123",
-        "created_at": "2026-01-01T00:00:00Z",
-        "status": "user_input",
-        "original_text": "test",
-        "source_format": ".docx",
-    })
-    with pytest.raises(ValueError, match="Invalid source format"):
-        store.import_session(data)
-
-
-def test_import_session_fills_missing_optional_fields():
-    """Finding 5 regression: import with only required fields must not crash get_session_status."""
-    store = TempDataStore()
-    data = json.dumps({
-        "session_id": "abc123",
-        "created_at": "2026-01-01T00:00:00Z",
-        "status": "user_input",
-        "original_text": "test",
-        "source_format": "paste",
-    })
-    sid = store.import_session(data)
-    session = store.get_session(sid)
-    assert session["source_filename"] is None
-    assert session["pii_detections"] == []
-    assert session["depersonalized_text"] is None
-    assert session["response_text"] is None
-    assert session["repersonalized_text"] is None
-    assert session["unmatched_placeholders"] == []
 
 
 # --- Round-Trip Integration ---
@@ -412,15 +233,3 @@ def test_full_lifecycle():
     assert session["response_text"] == "Dear [Person_1], your application is approved."
     assert session["repersonalized_text"] == "Dear John Smith, your application is approved."
     assert len(session["pii_detections"]) == 1
-
-    # Export, delete, import round-trip
-    exported = store.export_session(sid)
-    store.delete_session(sid)
-    assert store.session_count() == 0
-
-    store.import_session(exported)
-    restored = store.get_session(sid)
-    assert restored["original_text"] == "My name is John Smith"
-    assert restored["status"] == "closed"
-    assert restored["depersonalized_text"] == "My name is [Person_1]"
-    assert len(restored["pii_detections"]) == 1

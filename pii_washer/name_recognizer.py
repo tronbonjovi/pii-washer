@@ -4,9 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from presidio_analyzer import Pattern, PatternRecognizer
-from presidio_analyzer import EntityRecognizer, RecognizerResult
-
+from presidio_analyzer import EntityRecognizer, Pattern, PatternRecognizer, RecognizerResult
 
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -54,16 +52,16 @@ class DictionaryNameRecognizer(EntityRecognizer):
             name="DictionaryNameRecognizer",
         )
         names_path = DATA_DIR / "common_first_names.json"
-        with open(names_path, "r", encoding="utf-8") as f:
+        with open(names_path, encoding="utf-8") as f:
             self._first_names = set(json.load(f))
 
         # Load multi-word exclusions (shared with CapitalizedPairRecognizer) so
         # that known company/phrase pairs like "Morgan Stanley" are not flagged.
         exclusions_path = DATA_DIR / "capitalized_word_exclusions.json"
-        with open(exclusions_path, "r", encoding="utf-8") as f:
+        with open(exclusions_path, encoding="utf-8") as f:
             excl_data = json.load(f)
         self._multiword_exclusions: set[str] = set()
-        for category, values in excl_data.items():
+        for _category, values in excl_data.items():
             for value in values:
                 if len(value.split()) > 1:
                     self._multiword_exclusions.add(value.lower())
@@ -126,7 +124,7 @@ class CapitalizedPairRecognizer(EntityRecognizer):
             name="CapitalizedPairRecognizer",
         )
         exclusions_path = DATA_DIR / "capitalized_word_exclusions.json"
-        with open(exclusions_path, "r", encoding="utf-8") as f:
+        with open(exclusions_path, encoding="utf-8") as f:
             data = json.load(f)
         # Org suffixes disqualify any match containing them (even one word)
         self._org_suffixes = {v.lower() for v in data.get("org_suffixes", [])}

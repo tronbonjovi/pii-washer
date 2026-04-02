@@ -43,7 +43,7 @@ export function InputTab() {
   const analyzeDocumentRef = useRef(analyzeDocument);
   analyzeDocumentRef.current = analyzeDocument;
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
-  const clearActiveSession = useSessionStore((s) => s.clearActiveSession);
+  const resetSession = useSessionStore((s) => s.resetSession);
   const { data: activeSession } = useSession(activeSessionId);
 
   const draftSession =
@@ -101,7 +101,7 @@ export function InputTab() {
 
   function handleFileSelect(file: File) {
     if (activeSessionId) {
-      clearActiveSession();
+      resetSession();
     }
     setText('');
     setSelectedFile(file);
@@ -224,7 +224,7 @@ export function InputTab() {
         value={text}
         onChange={(e) => {
           if (draftSession && activeSessionId) {
-            clearActiveSession();
+            resetSession();
           }
           setText(e.target.value);
           if (analyzeDocument.error) analyzeDocument.reset();

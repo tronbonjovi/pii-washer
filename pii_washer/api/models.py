@@ -2,7 +2,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-
 # ---------------------------------------------------------------------------
 # Request models
 # ---------------------------------------------------------------------------
@@ -28,9 +27,6 @@ class ManualDetectionRequest(BaseModel):
     category: str
 
 
-class ImportSessionRequest(BaseModel):
-    session_data: str
-
 
 # ---------------------------------------------------------------------------
 # Response models
@@ -53,14 +49,6 @@ class SessionCreatedResponse(BaseModel):
     source_filename: str | None
     original_text: str
 
-
-class SessionListItem(BaseModel):
-    session_id: str
-    status: str
-    source_format: str
-    source_filename: str | None
-    created_at: str
-    detection_count: int
 
 
 class DetectionPosition(BaseModel):
@@ -126,9 +114,6 @@ class DeletedCountResponse(BaseModel):
 class ConfirmedCountResponse(BaseModel):
     confirmed_count: int
 
-
-class ImportedSessionResponse(BaseModel):
-    session_id: str
 
 
 class ResponseLoadedResponse(BaseModel):

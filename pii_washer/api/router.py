@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Request, UploadFile
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 
 from pii_washer.document_loader import DocumentLoader
 
@@ -23,8 +23,6 @@ from .models import (
     DetectionPosition,
     EditPlaceholderRequest,
     HealthResponse,
-    ImportedSessionResponse,
-    ImportSessionRequest,
     LoadResponseRequest,
     ManualDetectionRequest,
     ManualDetectionResponse,
@@ -32,7 +30,6 @@ from .models import (
     RepersonalizeResponse,
     ResponseLoadedResponse,
     SessionCreatedResponse,
-    SessionListItem,
     UpdateDetectionStatusRequest,
 )
 
@@ -157,47 +154,13 @@ async def upload_session(file: UploadFile, request: Request):
         return server_error_response(exc)
 
 
-@router.get("/sessions", response_model=list[SessionListItem])
-def list_sessions(request: Request):
-    sm = _sm(request)
-    summaries = sm.list_sessions()
-    result = []
-    for s in summaries:
-        try:
-            full = sm.get_session(s["session_id"])
-            detection_count = len(full.get("pii_detections") or [])
-        except KeyError:
-            detection_count = 0
-        result.append(
-            SessionListItem(
-                session_id=s["session_id"],
-                status=s["status"],
-                source_format=s["source_format"],
-                source_filename=s["source_filename"],
-                created_at=s["created_at"],
-                detection_count=detection_count,
-            )
-        )
-    return result
 
-
-@router.delete("/sessions", response_model=DeletedCountResponse)
-def clear_all_sessions(request: Request):
+@router.post("/sessions/reset", response_model=DeletedCountResponse)
+def reset_session(request: Request):
     sm = _sm(request)
-    deleted_count = sm.clear_all_sessions()
+    deleted_count = sm.reset()
     return DeletedCountResponse(deleted_count=deleted_count)
 
-
-@router.post("/sessions/import", status_code=201, response_model=ImportedSessionResponse)
-def import_session(body: ImportSessionRequest, request: Request):
-    sm = _sm(request)
-    try:
-        session_id = sm.import_session(body.session_data)
-        return ImportedSessionResponse(session_id=session_id)
-    except ValueError as exc:
-        return value_error_response(exc)
-    except Exception as exc:
-        return server_error_response(exc)
 
 
 # ---------------------------------------------------------------------------
@@ -227,29 +190,6 @@ def get_session_status(session_id: str, request: Request):
     except Exception as exc:
         return server_error_response(exc)
 
-
-@router.delete("/sessions/{session_id}", status_code=204)
-def delete_session(session_id: str, request: Request):
-    sm = _sm(request)
-    try:
-        sm.delete_session(session_id)
-        return Response(status_code=204)
-    except KeyError as exc:
-        return key_error_response(exc)
-    except Exception as exc:
-        return server_error_response(exc)
-
-
-@router.get("/sessions/{session_id}/export")
-def export_session(session_id: str, request: Request):
-    sm = _sm(request)
-    try:
-        json_str = sm.export_session(session_id)
-        return Response(content=json_str, media_type="application/json")
-    except KeyError as exc:
-        return key_error_response(exc)
-    except Exception as exc:
-        return server_error_response(exc)
 
 
 # ---------------------------------------------------------------------------

@@ -1,5 +1,7 @@
+import { RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useSessionStore, type TabId } from '@/store/session-store';
-import { SessionPanel } from '@/components/session/SessionPanel';
+import { useResetSession } from '@/hooks/use-sessions';
 import { ThemeToggle } from './ThemeToggle';
 import { useTheme } from '@/components/theme-provider';
 import logoDarkSrc from '@/assets/logo-darkmode.png';
@@ -17,6 +19,7 @@ export function Header() {
   const { activeTab, setActiveTab } = useSessionStore();
   const { resolvedTheme } = useTheme();
   const logoSrc = resolvedTheme === 'dark' ? logoDarkSrc : logoLightSrc;
+  const resetSession = useResetSession();
 
   return (
     <header className="flex h-20 items-center justify-between px-6">
@@ -56,17 +59,20 @@ export function Header() {
         })}
       </nav>
 
-      {/* Right: Theme toggle + Sessions + session ID */}
+      {/* Right: Theme toggle + Start Over */}
       <div className="flex items-center gap-3">
         <ThemeToggle />
-        <div className="flex flex-col items-end gap-0.5">
-          <SessionPanel />
-          {activeSessionId && (
-            <span className="text-[10px] text-muted-foreground leading-none">
-              {activeSessionId}
-            </span>
-          )}
-        </div>
+        {activeSessionId && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => resetSession.mutate()}
+            disabled={resetSession.isPending}
+          >
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Start Over
+          </Button>
+        )}
       </div>
     </header>
   );

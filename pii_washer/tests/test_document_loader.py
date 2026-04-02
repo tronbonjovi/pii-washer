@@ -1,5 +1,5 @@
-import os
 import pytest
+
 from pii_washer.document_loader import DocumentLoader
 
 

@@ -25,10 +25,10 @@ class DocumentLoader:
 
         # 4. Read with encoding fallback
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 content = f.read()
         except UnicodeDecodeError:
-            with open(filepath, "r", encoding="latin-1") as f:
+            with open(filepath, encoding="latin-1") as f:
                 content = f.read()
 
         # 5. Check for null bytes (binary detection)

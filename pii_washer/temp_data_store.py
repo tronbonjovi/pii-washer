@@ -1,9 +1,7 @@
 import atexit
 import copy
-import json
 import os
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 
 VALID_SOURCE_FORMATS = {".txt", ".md", "paste"}
 VALID_STATUSES = {
@@ -17,10 +15,6 @@ SESSION_FIELDS = {
     "repersonalized_text", "unmatched_placeholders",
 }
 IMMUTABLE_FIELDS = {"session_id", "created_at"}
-REQUIRED_IMPORT_FIELDS = [
-    "session_id", "created_at", "status", "original_text", "source_format",
-]
-
 
 class TempDataStore:
     _SENSITIVE_FIELDS = [
@@ -54,7 +48,7 @@ class TempDataStore:
             obj.clear()
 
     def _now(self) -> str:
-        return datetime.now(timezone.utc).isoformat()
+        return datetime.now(UTC).isoformat()
 
     def _generate_id(self) -> str:
         while True:
@@ -114,74 +108,6 @@ class TempDataStore:
         session["updated_at"] = self._now()
 
         return copy.deepcopy(session)
-
-    def delete_session(self, session_id: str) -> None:
-        if session_id not in self._sessions:
-            raise KeyError(f"Session not found: {session_id}")
-        self._recursive_wipe(self._sessions[session_id])
-        del self._sessions[session_id]
-
-    def list_sessions(self) -> list[dict]:
-        summaries = [
-            {
-                "session_id": s["session_id"],
-                "status": s["status"],
-                "source_format": s["source_format"],
-                "source_filename": s["source_filename"],
-                "created_at": s["created_at"],
-                "updated_at": s["updated_at"],
-            }
-            for s in self._sessions.values()
-        ]
-        summaries.sort(key=lambda x: x["created_at"], reverse=True)
-        return summaries
-
-    def clear_all(self) -> int:
-        count = len(self._sessions)
-        for session in self._sessions.values():
-            self._recursive_wipe(session)
-        self._sessions.clear()
-        return count
-
-    def export_session(self, session_id: str) -> str:
-        if session_id not in self._sessions:
-            raise KeyError(f"Session not found: {session_id}")
-        return json.dumps(self._sessions[session_id], indent=2)
-
-    def import_session(self, json_string: str) -> str:
-        try:
-            data = json.loads(json_string)
-        except (json.JSONDecodeError, TypeError):
-            raise ValueError("Invalid JSON")
-
-        for field in REQUIRED_IMPORT_FIELDS:
-            if field not in data:
-                raise ValueError(f"Missing required field: {field}")
-
-        if data["status"] not in VALID_STATUSES:
-            raise ValueError(f"Invalid status: {data['status']}")
-        if data["source_format"] not in VALID_SOURCE_FORMATS:
-            raise ValueError(f"Invalid source format: {data['source_format']}")
-
-        session_id = data["session_id"]
-        if session_id in self._sessions:
-            raise ValueError(f"Session already exists: {session_id}")
-
-        # Fill any optional fields absent from the import with canonical defaults
-        data.setdefault("source_filename", None)
-        data.setdefault("pii_detections", [])
-        data.setdefault("depersonalized_text", None)
-        data.setdefault("response_text", None)
-        data.setdefault("repersonalized_text", None)
-        data.setdefault("unmatched_placeholders", [])
-
-        data["updated_at"] = self._now()
-        # Only persist known session fields; drop anything else that may
-        # have been injected into the JSON payload.
-        self._sessions[session_id] = {
-            k: v for k, v in data.items() if k in SESSION_FIELDS
-        }
-        return session_id
 
     def secure_clear(self) -> int:
         """Overwrite all sensitive fields with empty values before deleting.

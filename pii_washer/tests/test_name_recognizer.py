@@ -1,7 +1,8 @@
 import pytest
 from presidio_analyzer import AnalyzerEngine
 from presidio_analyzer.nlp_engine import NlpEngineProvider
-from pii_washer.name_recognizer import TitleNameRecognizer, DictionaryNameRecognizer, CapitalizedPairRecognizer
+
+from pii_washer.name_recognizer import CapitalizedPairRecognizer, DictionaryNameRecognizer, TitleNameRecognizer
 
 
 @pytest.fixture(scope="module")
