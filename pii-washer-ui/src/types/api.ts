@@ -55,15 +55,6 @@ export interface Session {
   unmatched_placeholders: string[];
 }
 
-export interface SessionListItem {
-  session_id: string;
-  status: SessionStatus;
-  source_format: string;
-  source_filename: string | null;
-  created_at: string;
-  detection_count: number;
-}
-
 export interface SessionStatusResponse {
   session_id: string;
   status: SessionStatus;

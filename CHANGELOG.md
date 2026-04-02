@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- "Start Over" button in header to reset and begin a new task
+- `POST /sessions/reset` endpoint for clearing session state
+
+### Removed
+
+- Session list, import/export, and multi-session management UI
+- Backend endpoints: `GET /sessions`, `DELETE /sessions`, `POST /sessions/import`, `DELETE /sessions/{id}`, `GET /sessions/{id}/export`
+
 ## [1.0.1] - 2026-03-20
 
 ### Added
