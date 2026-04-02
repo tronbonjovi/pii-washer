@@ -1,13 +1,11 @@
 """Integration tests for the PII Washer FastAPI wrapper (B2)."""
 
 import io
-import json
 
 import pytest
 from fastapi.testclient import TestClient
 
 from pii_washer.session_manager import SessionManager
-
 
 # ---------------------------------------------------------------------------
 # Mock Detection Engine (same pattern as test_session_manager.py)

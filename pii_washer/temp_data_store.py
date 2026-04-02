@@ -2,8 +2,7 @@ import atexit
 import copy
 import json
 import os
-from datetime import datetime, timezone
-
+from datetime import UTC, datetime
 
 VALID_SOURCE_FORMATS = {".txt", ".md", "paste"}
 VALID_STATUSES = {
@@ -54,7 +53,7 @@ class TempDataStore:
             obj.clear()
 
     def _now(self) -> str:
-        return datetime.now(timezone.utc).isoformat()
+        return datetime.now(UTC).isoformat()
 
     def _generate_id(self) -> str:
         while True:
@@ -151,8 +150,8 @@ class TempDataStore:
     def import_session(self, json_string: str) -> str:
         try:
             data = json.loads(json_string)
-        except (json.JSONDecodeError, TypeError):
-            raise ValueError("Invalid JSON")
+        except (json.JSONDecodeError, TypeError) as err:
+            raise ValueError("Invalid JSON") from err
 
         for field in REQUIRED_IMPORT_FIELDS:
             if field not in data:

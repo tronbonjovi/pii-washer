@@ -4,7 +4,6 @@ import pytest
 
 from pii_washer.session_manager import SessionManager
 
-
 # ---------------------------------------------------------------------------
 # Mock Detection Engine
 # ---------------------------------------------------------------------------
@@ -167,7 +166,6 @@ class TestAnalysis:
 
     def test_init_catches_import_error(self):
         """Deferred item: ImportError (missing spaCy/Presidio) is caught gracefully."""
-        from pii_washer.session_manager import _UNSET
         mgr = SessionManager.__new__(SessionManager)
         # Directly exercise the __init__ logic by calling it with _UNSET sentinel
         # We patch the import target to simulate a missing package

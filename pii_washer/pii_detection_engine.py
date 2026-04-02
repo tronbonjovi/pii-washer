@@ -5,8 +5,7 @@ from pathlib import Path
 import spacy
 import tldextract
 import tldextract.tldextract as _tldextract_mod
-from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer
-from presidio_analyzer import EntityRecognizer, RecognizerResult
+from presidio_analyzer import AnalyzerEngine, EntityRecognizer, Pattern, PatternRecognizer, RecognizerResult
 from presidio_analyzer.nlp_engine import NlpEngineProvider
 
 # Force tldextract to use its bundled snapshot only — no network calls.
@@ -511,7 +510,7 @@ class PIIDetectionEngine:
 
         # Task 12: load city list for ZIP context — pre-compile as single alternation
         cities_path = DATA_DIR / "us_cities_top200.json"
-        with open(cities_path, "r", encoding="utf-8") as f:
+        with open(cities_path, encoding="utf-8") as f:
             cities = json.load(f)
         self._us_cities_pattern = re.compile(
             r"\b(?:" + "|".join(re.escape(c.lower()) for c in cities) + r")\b"
@@ -540,7 +539,7 @@ class PIIDetectionEngine:
         self._analyzer.registry.add_recognizer(zip_recognizer)
 
         # Task 5: Register name recognizers
-        from pii_washer.name_recognizer import TitleNameRecognizer, DictionaryNameRecognizer, CapitalizedPairRecognizer
+        from pii_washer.name_recognizer import CapitalizedPairRecognizer, DictionaryNameRecognizer, TitleNameRecognizer
         self._analyzer.registry.add_recognizer(TitleNameRecognizer())
         self._analyzer.registry.add_recognizer(DictionaryNameRecognizer())
         self._analyzer.registry.add_recognizer(CapitalizedPairRecognizer())
