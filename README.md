@@ -10,11 +10,11 @@ Local-only PII detection and text sanitization. Paste text containing personal d
 2. **Work with clean text** — Copy the depersonalized version into ChatGPT, Claude, or any other tool. No real PII is transmitted.
 3. **Repersonalize** — Paste the AI's response back. Pii Washer swaps the placeholders for the original values, giving you a fully restored document.
 
-Placeholder mappings are consistent within a session — the same name always gets the same placeholder. Use "Start Over" in the header to reset and begin a new task.
+Placeholder mappings are consistent within a session — the same name always gets the same placeholder. Use "Start Over" in the header to reset and begin a new task. The gear icon in the header opens a settings menu with an **About** dialog and **Check for Updates** (compares your local version against the latest GitHub release).
 
 ## Privacy
 
-- Runs entirely on your local machine — no network calls after initial setup.
+- Runs entirely on your local machine — the only network call is the optional "Check for Updates" request to the GitHub releases API.
 - All data is held in memory only and securely cleared on reset or shutdown.
 
 ## Quick start
