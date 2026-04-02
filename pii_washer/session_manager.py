@@ -369,7 +369,7 @@ class SessionManager:
     def delete_session(self, session_id):
         return self.store.delete_session(session_id)
 
-    def clear_all_sessions(self):
+    def reset(self):
         return self.store.secure_clear()
 
     def export_session(self, session_id):

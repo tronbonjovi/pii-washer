@@ -49,7 +49,7 @@ def create_app(session_manager=None) -> FastAPI:
         logger.info("PII Washer %s started (log: %s)", APP_VERSION, _log_file)
         yield
 
-        app.state.session_manager.clear_all_sessions()
+        app.state.session_manager.reset()
         logger.info("PII Washer shut down, sessions cleared")
 
     app = FastAPI(

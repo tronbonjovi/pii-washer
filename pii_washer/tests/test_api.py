@@ -426,15 +426,17 @@ class TestHealthCheck:
 # 7. Session lifecycle cleanup
 # ---------------------------------------------------------------------------
 
-class TestLifecycle:
-    def test_clear_all_sessions(self, client):
+class TestReset:
+    def test_reset_clears_session(self, client):
         client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
-        client.post("/api/v1/sessions", json={"text": "Another doc"})
-        r = client.delete("/api/v1/sessions")
+        r = client.post("/api/v1/sessions/reset")
         assert r.status_code == 200
-        assert r.json()["deleted_count"] >= 2
-        r2 = client.get("/api/v1/sessions")
-        assert r2.json() == []
+        assert r.json()["deleted_count"] >= 1
+
+    def test_reset_when_empty(self, client):
+        r = client.post("/api/v1/sessions/reset")
+        assert r.status_code == 200
+        assert r.json()["deleted_count"] == 0
 
 
 # ---------------------------------------------------------------------------

@@ -181,10 +181,10 @@ def list_sessions(request: Request):
     return result
 
 
-@router.delete("/sessions", response_model=DeletedCountResponse)
-def clear_all_sessions(request: Request):
+@router.post("/sessions/reset", response_model=DeletedCountResponse)
+def reset_session(request: Request):
     sm = _sm(request)
-    deleted_count = sm.clear_all_sessions()
+    deleted_count = sm.reset()
     return DeletedCountResponse(deleted_count=deleted_count)
 
 

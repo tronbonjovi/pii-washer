@@ -522,7 +522,7 @@ class TestSessionManagement:
         manager.load_text("One.")
         manager.load_text("Two.")
         manager.load_text("Three.")
-        count = manager.clear_all_sessions()
+        count = manager.reset()
         assert count == 3
         assert manager.list_sessions() == []
 
@@ -874,3 +874,22 @@ class TestFullWorkflow:
         final_session = manager.get_session(sid)
         assert final_session["status"] == "repersonalized"
         assert final_session["repersonalized_text"] is not None
+
+
+# ---------------------------------------------------------------------------
+# Reset
+# ---------------------------------------------------------------------------
+
+
+class TestReset:
+    def test_reset_clears_all_sessions(self, manager):
+        sid = manager.load_text("Some PII text with John Smith.")
+        manager.analyze(sid)
+        count = manager.reset()
+        assert count >= 1
+        with pytest.raises(KeyError):
+            manager.get_session(sid)
+
+    def test_reset_when_empty(self, manager):
+        count = manager.reset()
+        assert count == 0
