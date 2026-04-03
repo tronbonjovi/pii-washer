@@ -255,6 +255,66 @@ class TestFileUpload:
         assert r.status_code == 413
         assert r.json()["error"]["code"] == "FILE_TOO_LARGE"
 
+    def test_upload_docx_file(self, client):
+        from docx import Document
+        doc = Document()
+        doc.add_paragraph("John Smith lives in Springfield.")
+        buf = io.BytesIO()
+        doc.save(buf)
+        buf.seek(0)
+        resp = client.post(
+            "/api/v1/sessions/upload",
+            files={"file": ("test.docx", buf, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["source_format"] == ".docx"
+        assert data["source_filename"] == "test.docx"
+
+    def test_upload_pdf_file(self, client):
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf, pagesize=letter)
+        c.drawString(72, 750, "Jane Doe called (555) 123-4567 yesterday.")
+        c.showPage()
+        c.save()
+        buf.seek(0)
+        resp = client.post("/api/v1/sessions/upload", files={"file": ("test.pdf", buf, "application/pdf")})
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".pdf"
+
+    def test_upload_csv_file(self, client):
+        resp = client.post(
+            "/api/v1/sessions/upload",
+            files={"file": ("test.csv", b"Name,Email\nJohn Smith,john@example.com\n", "text/csv")},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".csv"
+
+    def test_upload_xlsx_file(self, client):
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.append(["Name", "Email"])
+        ws.append(["John Smith", "john@example.com"])
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        resp = client.post(
+            "/api/v1/sessions/upload",
+            files={"file": ("test.xlsx", buf, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".xlsx"
+
+    def test_upload_html_file(self, client):
+        content = b"<html><body><p>John Smith called (555) 123-4567.</p></body></html>"
+        resp = client.post("/api/v1/sessions/upload",
+            files={"file": ("test.html", content, "text/html")})
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".html"
+
 
 # ---------------------------------------------------------------------------
 # 4. Detection management

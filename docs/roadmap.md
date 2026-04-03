@@ -18,6 +18,7 @@ This roadmap frames the work ahead for Pii Washer. Items are grouped by time hor
 | Session removal | Removed user-facing session management. Single-session utility with "Start Over" button. Released as v1.1.0. | 2026-04-01 |
 | Codex review remediation | API hardening (6 fixes) + ALL CAPS name detection + UI bug fix. Driven by full-codebase Codex adversarial review. PR #3. Full tracker: `docs/codex-review-tracker.md` (5 open, 4 mitigated, 5 N/A remaining). | 2026-04-02 |
 | Dependency documentation | Added US/English-only scope disclaimer to README. Removed dead Tauri deps. Added missing tsconfig files so `npm run build` works on fresh clones. Full dep listing deferred — low value at current project stage. | 2026-04-03 |
+| Additional file formats | Added .docx, .pdf, .csv, .xlsx, .html support via extractor architecture. Structure preserved in extraction. | 2026-04-03 |
 
 ## Near-term — Core functionality and trust
 
@@ -34,7 +35,7 @@ Focus is on completing the app's core capabilities and security posture before p
 |---|---|---|
 | Cross-platform release builds | GitHub Actions workflow that builds Windows, macOS, and Linux executables on release and uploads them as assets | TBD — needs brainstorm session |
 | Code signing | Sign the Windows exe to eliminate SmartScreen warnings. Requires purchasing a code signing certificate ($100-400/yr). | TBD — worth revisiting once there's a user base |
-| Additional file formats | Support beyond .txt and .md | TBD — needs brainstorm session |
+| ~~Additional file formats~~ | ~~Support beyond .txt and .md~~ | ~~Done — see Completed table~~ |
 | Detection improvements v2 | International PII, date false positives, CapitalizedPairRecognizer tuning. See Codex tracker #15-17 for current state and what's already mitigated. | TBD — needs brainstorm session |
 | UX polish batch | Toast positioning, button placement, detection summary sizing, text field readability. Also includes Codex tracker #9 (error boundaries) and #13 (state persistence on refresh). | TBD — needs brainstorm session |
 | Logo & icon updates | Fix ico file sizes (small icons show default), add transparent backgrounds | TBD — needs brainstorm session |
