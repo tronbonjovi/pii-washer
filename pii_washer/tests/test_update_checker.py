@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from pii_washer.api.main import create_app
+from pii_washer.api.update_checker import get_current_version
 from pii_washer.session_manager import SessionManager
 
 
@@ -32,8 +33,8 @@ class TestUpdateCheck:
         mock_response = AsyncMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "tag_name": "v1.1.1",
-            "html_url": "https://github.com/tronbonjovi/pii-washer/releases/tag/v1.1.1",
+            "tag_name": f"v{get_current_version()}",
+            "html_url": f"https://github.com/tronbonjovi/pii-washer/releases/tag/v{get_current_version()}",
         }
 
         with patch("pii_washer.api.update_checker.httpx.AsyncClient") as MockClient:
@@ -49,8 +50,8 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.1.1"
-        assert body["latest_version"] == "1.1.1"
+        assert body["current_version"] == get_current_version()
+        assert body["latest_version"] == get_current_version()
         assert body["update_available"] is False
         assert body["error"] is None
 
@@ -76,7 +77,7 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.1.1"
+        assert body["current_version"] == get_current_version()
         assert body["latest_version"] == "2.0.0"
         assert body["update_available"] is True
         assert body["release_url"] == "https://github.com/tronbonjovi/pii-washer/releases/tag/v2.0.0"
@@ -96,7 +97,7 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.1.1"
+        assert body["current_version"] == get_current_version()
         assert body["latest_version"] is None
         assert body["update_available"] is False
         assert body["error"] is not None
@@ -120,7 +121,7 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.1.1"
+        assert body["current_version"] == get_current_version()
         assert body["latest_version"] is None
         assert body["update_available"] is False
         assert body["error"] is not None
