@@ -29,7 +29,7 @@ class TitleNameRecognizer(PatternRecognizer):
         title_alternation = "|".join(re.escape(t) for t in self.TITLES)
         pattern_text = (
             r"\b(?:" + title_alternation + r")\.?\s+"
-            r"[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2}\b"
+            r"[A-Z](?:[a-z]+|[A-Z]+)(?:\s+[A-Z](?:[a-z]+|[A-Z]+)){0,2}\b"
         )
         patterns = [Pattern("title_name", pattern_text, score=0.7)]
         super().__init__(
@@ -93,7 +93,9 @@ class DictionaryNameRecognizer(EntityRecognizer):
                     break
                 if gap.strip() != "":
                     break
-                if not next_word[0].isupper() or not next_word[1:].islower():
+                if not next_word[0].isupper():
+                    break
+                if not (next_word[1:].islower() or next_word.isupper()):
                     break
                 name_end = next_token.end()
                 found_surname = True
