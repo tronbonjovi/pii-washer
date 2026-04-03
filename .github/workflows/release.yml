@@ -45,7 +45,7 @@ jobs:
           - os: macos-latest
             artifact-name: pii-washer-macos
             exe-name: pii-washer
-            pyinstaller-args: --name pii-washer --windowed --icon assets/app-icons/pii-washer-app-icon.icns
+            pyinstaller-args: --name pii-washer --icon assets/app-icons/pii-washer-app-icon.icns
           - os: ubuntu-latest
             artifact-name: pii-washer-linux
             exe-name: pii-washer
