@@ -184,6 +184,21 @@ class TestSessionCRUD:
         assert "detection_count" in body
         assert "can_analyze" in body
 
+    def test_get_session_returns_typed_response(self, client):
+        """GET /sessions/{id} must return exactly the expected fields."""
+        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
+        session_id = r.json()["session_id"]
+        r2 = client.get(f"/api/v1/sessions/{session_id}")
+        assert r2.status_code == 200
+        body = r2.json()
+        expected_keys = {
+            "session_id", "status", "created_at", "updated_at",
+            "source_format", "source_filename", "original_text",
+            "pii_detections", "depersonalized_text", "response_text",
+            "repersonalized_text", "unmatched_placeholders",
+        }
+        assert set(body.keys()) == expected_keys
+
 
 # ---------------------------------------------------------------------------
 # 3. File upload validation

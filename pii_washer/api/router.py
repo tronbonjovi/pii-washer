@@ -30,6 +30,7 @@ from .models import (
     RepersonalizeResponse,
     ResponseLoadedResponse,
     SessionCreatedResponse,
+    SessionDetailResponse,
     UpdateCheckResponse,
     UpdateDetectionStatusRequest,
 )
@@ -65,6 +66,23 @@ def _to_detection(d: dict) -> Detection:
         positions=[DetectionPosition(start=p["start"], end=p["end"]) for p in d["positions"]],
         confidence=d["confidence"],
         source=d.get("source", "auto"),
+    )
+
+
+def _to_session_detail(session: dict) -> SessionDetailResponse:
+    return SessionDetailResponse(
+        session_id=session["session_id"],
+        status=session["status"],
+        created_at=session["created_at"],
+        updated_at=session["updated_at"],
+        source_format=session["source_format"],
+        source_filename=session.get("source_filename"),
+        original_text=session["original_text"],
+        pii_detections=[_to_detection(d) for d in session.get("pii_detections", [])],
+        depersonalized_text=session.get("depersonalized_text"),
+        response_text=session.get("response_text"),
+        repersonalized_text=session.get("repersonalized_text"),
+        unmatched_placeholders=session.get("unmatched_placeholders", []),
     )
 
 
@@ -178,12 +196,12 @@ def reset_session(request: Request):
 # Session management — parameterized paths
 # ---------------------------------------------------------------------------
 
-@router.get("/sessions/{session_id}")
+@router.get("/sessions/{session_id}", response_model=SessionDetailResponse)
 def get_session(session_id: str, request: Request):
     sm = _sm(request)
     try:
         session = sm.get_session(session_id)
-        return JSONResponse(content=session)
+        return _to_session_detail(session)
     except KeyError as exc:
         return key_error_response(exc)
     except Exception as exc:
