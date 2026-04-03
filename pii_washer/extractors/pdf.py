@@ -57,17 +57,7 @@ class PdfExtractor(BaseExtractor):
 
                 # Extract remaining text, excluding table regions.
                 if table_bboxes:
-                    # Crop away each table's bounding box, then extract text
-                    # from what remains.
-                    remaining = page
-                    for bbox in table_bboxes:
-                        # pdfplumber bboxes are (x0, top, x1, bottom)
-                        # We carve out everything except the table strip by
-                        # extracting text from the full page without the table
-                        # cells — simplest approach is to extract words outside
-                        # all table bboxes.
-                        pass
-                    # Simpler: extract all words not inside any table bbox
+                    # Extract all words not inside any table bbox
                     words = page.extract_words()
                     non_table_words = [
                         w["text"] for w in words

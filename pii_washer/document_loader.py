@@ -12,9 +12,6 @@ class DocumentLoader:
     SUPPORTED_FORMATS = [".txt", ".md", ".docx", ".pdf", ".csv", ".xlsx", ".html"]
     MAX_FILE_SIZE = 1_048_576  # 1 MB in bytes
 
-    # Binary formats that go through the extractor registry instead of
-    # the UTF-8 text path.
-    _TEXT_FORMATS = {".txt", ".md"}
     _EXTRACTOR_MAP: dict[str, BaseExtractor] = {
         ".docx": DocxExtractor(),
         ".pdf": PdfExtractor(),

@@ -37,7 +37,7 @@ class HtmlExtractor(BaseExtractor):
             ValueError: If the file contains no visible text content.
         """
         try:
-            from bs4 import BeautifulSoup, Tag
+            from bs4 import BeautifulSoup
         except ImportError as exc:
             raise RuntimeError(
                 "beautifulsoup4 is required to read .html files. "
