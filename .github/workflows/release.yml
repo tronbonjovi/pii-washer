@@ -41,11 +41,11 @@ jobs:
           - os: windows-latest
             artifact-name: pii-washer-windows
             exe-name: pii-washer.exe
-            pyinstaller-args: --name pii-washer --icon assets/app-icons/pii-washer-app-icon.ico
+            pyinstaller-args: --name pii-washer --windowed --icon assets/app-icons/pii-washer-app-icon.ico
           - os: macos-latest
             artifact-name: pii-washer-macos
             exe-name: pii-washer
-            pyinstaller-args: --name pii-washer --icon assets/app-icons/pii-washer-app-icon.icns
+            pyinstaller-args: --name pii-washer --windowed --icon assets/app-icons/pii-washer-app-icon.icns
           - os: ubuntu-latest
             artifact-name: pii-washer-linux
             exe-name: pii-washer
@@ -61,18 +61,17 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Get pip cache dir
+        id: pip-cache
+        shell: bash
+        run: echo "dir=$(pip cache dir)" >> "$GITHUB_OUTPUT"
+
       - name: Cache pip packages
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
+          path: ${{ steps.pip-cache.outputs.dir }}
           key: ${{ runner.os }}-pip-release-${{ hashFiles('pyproject.toml') }}
           restore-keys: ${{ runner.os }}-pip-release-
-
-      - name: Cache spaCy model
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-spacy-en_core_web_lg-3.8.0
 
       - name: Install Python dependencies
         run: |
@@ -93,11 +92,25 @@ jobs:
 
       - name: Build with PyInstaller
         shell: bash
+        env:
+          PYINSTALLER_ARGS: ${{ matrix.pyinstaller-args }}
         run: |
-          pyinstaller ${{ matrix.pyinstaller-args }} \
+          SEP=":"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            SEP=";"
+          fi
+          ICON_DATA=""
+          if [ -d "icon" ]; then
+            ICON_DATA="--add-data icon${SEP}icon"
+          fi
+          pyinstaller $PYINSTALLER_ARGS \
             --onefile \
-            --add-data "ui:ui" \
-            --add-data "pii_washer/data:pii_washer/data" \
+            --add-data "ui${SEP}ui" \
+            --add-data "pii_washer/data${SEP}pii_washer/data" \
+            $ICON_DATA \
+            --collect-all en_core_web_lg \
+            --collect-data tldextract \
+            --collect-data presidio_analyzer \
             --hidden-import pii_washer \
             --hidden-import pii_washer.api \
             --hidden-import pii_washer.api.main \
@@ -107,6 +120,11 @@ jobs:
             --hidden-import pii_washer.extractors.csv_ext \
             --hidden-import pii_washer.extractors.xlsx \
             --hidden-import pii_washer.extractors.html \
+            --hidden-import pdfplumber \
+            --hidden-import pdfminer \
+            --hidden-import docx \
+            --hidden-import openpyxl \
+            --hidden-import bs4 \
             pyinstaller_entry.py
 
       - name: Upload build artifact
