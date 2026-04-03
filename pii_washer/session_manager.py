@@ -162,6 +162,13 @@ class SessionManager:
             )
         if not new_placeholder:
             raise ValueError("Placeholder cannot be empty")
+        if len(new_placeholder) > 50:
+            raise ValueError("Placeholder cannot exceed 50 characters")
+        if not re.match(r'^[A-Za-z0-9_\-\[\] ]+$', new_placeholder):
+            raise ValueError(
+                "Placeholder can only contain letters, numbers, underscores, "
+                "hyphens, spaces, and brackets"
+            )
 
         for detection in session["pii_detections"]:
             if detection["id"] != detection_id and detection.get("placeholder") == new_placeholder:
