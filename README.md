@@ -10,6 +10,17 @@ Local-only PII detection and text sanitization. Paste text containing personal d
 2. **Work with clean text** — Copy the depersonalized version into ChatGPT, Claude, or any other tool. No real PII is transmitted.
 3. **Repersonalize** — Paste the AI's response back. Pii Washer swaps the placeholders for the original values, giving you a fully restored document.
 
+### Supported file formats
+
+| Format | Extensions |
+|---|---|
+| Plain text | .txt, .md |
+| Documents | .docx, .pdf |
+| Spreadsheets | .csv, .xlsx |
+| Web pages | .html |
+
+Paste text directly or upload a file. All processing happens in memory — files are never written to disk.
+
 Placeholder mappings are consistent within a session — the same name always gets the same placeholder. Use "Start Over" in the header to reset and begin a new task. The gear icon in the header opens a settings menu with an **About** dialog and **Check for Updates** (compares your local version against the latest GitHub release).
 
 ## Privacy
