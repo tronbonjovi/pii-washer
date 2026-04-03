@@ -1,0 +1,145 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pii-washer-ui/package-lock.json
+
+      - name: Install and build frontend
+        working-directory: pii-washer-ui
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload frontend dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: pii-washer-ui/dist/
+
+  build-desktop:
+    needs: build-frontend
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact-name: pii-washer-windows
+            exe-name: pii-washer.exe
+            pyinstaller-args: --name pii-washer --icon assets/app-icons/pii-washer-app-icon.ico
+          - os: macos-latest
+            artifact-name: pii-washer-macos
+            exe-name: pii-washer
+            pyinstaller-args: --name pii-washer --icon assets/app-icons/pii-washer-app-icon.icns
+          - os: ubuntu-latest
+            artifact-name: pii-washer-linux
+            exe-name: pii-washer
+            pyinstaller-args: --name pii-washer
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-release-${{ hashFiles('pyproject.toml') }}
+          restore-keys: ${{ runner.os }}-pip-release-
+
+      - name: Cache spaCy model
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-spacy-en_core_web_lg-3.8.0
+
+      - name: Install Python dependencies
+        run: |
+          pip install -e ".[desktop]"
+          pip install pyinstaller
+          pip install https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl
+
+      - name: Download frontend dist
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: ui/
+
+      - name: Copy icon (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: mkdir -p icon && cp assets/app-icons/pii-washer-app-icon.ico icon/
+
+      - name: Build with PyInstaller
+        shell: bash
+        run: |
+          pyinstaller ${{ matrix.pyinstaller-args }} \
+            --onefile \
+            --add-data "ui:ui" \
+            --add-data "pii_washer/data:pii_washer/data" \
+            --hidden-import pii_washer \
+            --hidden-import pii_washer.api \
+            --hidden-import pii_washer.api.main \
+            --hidden-import pii_washer.extractors \
+            --hidden-import pii_washer.extractors.docx \
+            --hidden-import pii_washer.extractors.pdf \
+            --hidden-import pii_washer.extractors.csv_ext \
+            --hidden-import pii_washer.extractors.xlsx \
+            --hidden-import pii_washer.extractors.html \
+            pyinstaller_entry.py
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: dist/${{ matrix.exe-name }}
+
+  create-release:
+    needs: build-desktop
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts/
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          cp release-artifacts/pii-washer-windows/pii-washer.exe release-assets/pii-washer-windows.exe
+          cp release-artifacts/pii-washer-macos/pii-washer release-assets/pii-washer-macos
+          cp release-artifacts/pii-washer-linux/pii-washer release-assets/pii-washer-linux
+          chmod +x release-assets/pii-washer-macos release-assets/pii-washer-linux
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            release-assets/pii-washer-windows.exe
+            release-assets/pii-washer-macos
+            release-assets/pii-washer-linux
