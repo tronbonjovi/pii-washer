@@ -2,7 +2,7 @@
 
 Local-only PII detection and text sanitization. Paste text containing personal data, get a clean version with all sensitive items replaced by consistent placeholders. You can use this to "de-personalize" text to use with LLMs and when you get a response back, "re-personalize" to swap the placeholders for the originals.
 
-> **Important:** PII detection is not perfect and will miss things. This tool is designed to assist a human, not replace one. Always review the results before sending text anywhere. An "Add PII" feature is included so you can manually tag anything the detector missed.
+> **Important:** PII detection is not perfect and will miss things. Detection is currently US/English-only — international formats (non-US phone numbers, national IDs from other countries, etc.) are not supported. This tool is designed to assist a human, not replace one. Always review the results before sending text anywhere. An "Add PII" feature is included so you can manually tag anything the detector missed.
 
 ## What it does
 

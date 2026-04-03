@@ -18,17 +18,14 @@ This roadmap frames the work ahead for Pii Washer. Items are grouped by time hor
 | Session removal | Removed user-facing session management. Single-session utility with "Start Over" button. Released as v1.1.0. | 2026-04-01 |
 | Codex review remediation | API hardening (6 fixes) + ALL CAPS name detection + UI bug fix. Driven by full-codebase Codex adversarial review. PR #3. Full tracker: `docs/codex-review-tracker.md` (5 open, 4 mitigated, 5 N/A remaining). | 2026-04-02 |
 
-## Near-term — Simplify and polish
+## Near-term — Core functionality and trust
 
-Suggested order reflects dependencies (session removal changes the UI surface, so UX work should follow it).
+Focus is on completing the app's core capabilities and security posture before polish.
 
 | # | Item | Description | Status |
 |---|---|---|---|
-| ~~1~~ | ~~Session removal~~ | ~~Completed — see Completed table~~ | ~~Done~~ |
-| 2 | UX polish batch | Toast positioning, button placement, detection summary sizing, text field readability. Also includes Codex tracker #9 (error boundaries) and #13 (state persistence on refresh). | TBD — needs brainstorm session |
-| 3 | Logo & icon updates | Fix ico file sizes (small icons show default), add transparent backgrounds | TBD — needs brainstorm session |
-| 4 | Security assessment | Investigate WebView2 disk caching, clipboard persistence, PyInstaller temp dir behavior. Runtime/platform-level concerns. See also Codex tracker #14 (`secure_clear` memory limits). | TBD — needs brainstorm session |
-| 5 | Dependency documentation | Document all dependencies and their roles. Transparent disclaimers about what the tool does and doesn't guarantee. | TBD — needs brainstorm session |
+| 1 | Security assessment | Investigate WebView2 disk caching, clipboard persistence, PyInstaller temp dir behavior. Runtime/platform-level concerns. See also Codex tracker #14 (`secure_clear` memory limits). | TBD — needs brainstorm session |
+| 2 | Dependency documentation | Document all dependencies and their roles. Transparent disclaimers about what the tool does and doesn't guarantee. | TBD — needs brainstorm session |
 
 ## Medium-term — Expand capabilities
 
@@ -38,6 +35,8 @@ Suggested order reflects dependencies (session removal changes the UI surface, s
 | Code signing | Sign the Windows exe to eliminate SmartScreen warnings. Requires purchasing a code signing certificate ($100-400/yr). | TBD — worth revisiting once there's a user base |
 | Additional file formats | Support beyond .txt and .md | TBD — needs brainstorm session |
 | Detection improvements v2 | International PII, date false positives, CapitalizedPairRecognizer tuning. See Codex tracker #15-17 for current state and what's already mitigated. | TBD — needs brainstorm session |
+| UX polish batch | Toast positioning, button placement, detection summary sizing, text field readability. Also includes Codex tracker #9 (error boundaries) and #13 (state persistence on refresh). | TBD — needs brainstorm session |
+| Logo & icon updates | Fix ico file sizes (small icons show default), add transparent backgrounds | TBD — needs brainstorm session |
 | Test infrastructure | Frontend tests and Presidio integration tests. See Codex tracker #10-11 for details. | TBD — needs brainstorm session |
 | Bug triage process | Structured workflow for reviewing and addressing bug reports. Intake -> reproduce -> fix -> verify loop. | TBD — needs brainstorm session (more valuable once user base grows) |
 

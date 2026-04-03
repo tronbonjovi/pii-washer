@@ -16,11 +16,14 @@ const LABELS = {
   dark: 'Dark mode',
 } as const;
 
+type Theme = (typeof CYCLE)[number];
+
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme: rawTheme, setTheme } = useTheme();
+  const theme = (rawTheme ?? 'system') as Theme;
   const Icon = ICONS[theme];
   const nextIndex = (CYCLE.indexOf(theme) + 1) % CYCLE.length;
-  const next = CYCLE[nextIndex];
+  const next = CYCLE[nextIndex]!;
 
   return (
     <Button

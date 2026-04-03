@@ -45,6 +45,8 @@ desktop.ini
 *.json
 !package.json
 !package-lock.json
+!tsconfig.json
+!tsconfig.*.json
 !pyproject.toml
 !pii_washer/data/*.json
 
