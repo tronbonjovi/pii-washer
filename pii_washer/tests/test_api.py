@@ -385,6 +385,19 @@ class TestErrorHandling:
         assert r.status_code == 422
         assert r.json()["error"]["code"] == "TEXT_NOT_FOUND"
 
+    def test_server_error_does_not_leak_exception_details(self, client):
+        """500 responses must not expose internal exception class or message."""
+        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
+        session_id = r.json()["session_id"]
+        from unittest.mock import patch
+        with patch.object(client.app.state.session_manager, "get_session", side_effect=TypeError("internal details")):
+            r = client.get(f"/api/v1/sessions/{session_id}")
+        assert r.status_code == 500
+        msg = r.json()["error"]["message"]
+        assert "TypeError" not in msg
+        assert "internal details" not in msg
+        assert msg == "An unexpected error occurred"
+
 
 # ---------------------------------------------------------------------------
 # 6. Health check
