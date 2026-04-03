@@ -271,6 +271,19 @@ class TestFileUpload:
         assert data["source_format"] == ".docx"
         assert data["source_filename"] == "test.docx"
 
+    def test_upload_pdf_file(self, client):
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+        buf = io.BytesIO()
+        c = canvas.Canvas(buf, pagesize=letter)
+        c.drawString(72, 750, "Jane Doe called (555) 123-4567 yesterday.")
+        c.showPage()
+        c.save()
+        buf.seek(0)
+        resp = client.post("/api/v1/sessions/upload", files={"file": ("test.pdf", buf, "application/pdf")})
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".pdf"
+
 
 # ---------------------------------------------------------------------------
 # 4. Detection management

@@ -2,10 +2,11 @@ import os
 
 from pii_washer.extractors.base import BaseExtractor
 from pii_washer.extractors.docx import DocxExtractor
+from pii_washer.extractors.pdf import PdfExtractor
 
 
 class DocumentLoader:
-    SUPPORTED_FORMATS = [".txt", ".md", ".docx"]
+    SUPPORTED_FORMATS = [".txt", ".md", ".docx", ".pdf"]
     MAX_FILE_SIZE = 1_048_576  # 1 MB in bytes
 
     # Binary formats that go through the extractor registry instead of
@@ -13,6 +14,7 @@ class DocumentLoader:
     _TEXT_FORMATS = {".txt", ".md"}
     _EXTRACTOR_MAP: dict[str, BaseExtractor] = {
         ".docx": DocxExtractor(),
+        ".pdf": PdfExtractor(),
     }
 
     def load_file(self, filepath: str) -> dict:

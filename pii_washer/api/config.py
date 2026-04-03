@@ -1,8 +1,8 @@
 API_VERSION = "v1"
 API_PREFIX = f"/api/{API_VERSION}"
 DEFAULT_PORT = 8000
-ALLOWED_EXTENSIONS = {".txt", ".md", ".docx"}
-BINARY_FORMATS = {".docx"}
+ALLOWED_EXTENSIONS = {".txt", ".md", ".docx", ".pdf"}
+BINARY_FORMATS = {".docx", ".pdf"}
 CORS_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",
