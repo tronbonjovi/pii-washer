@@ -3,12 +3,13 @@ import os
 from pii_washer.extractors.base import BaseExtractor
 from pii_washer.extractors.csv_ext import CsvExtractor
 from pii_washer.extractors.docx import DocxExtractor
+from pii_washer.extractors.html import HtmlExtractor
 from pii_washer.extractors.pdf import PdfExtractor
 from pii_washer.extractors.xlsx import XlsxExtractor
 
 
 class DocumentLoader:
-    SUPPORTED_FORMATS = [".txt", ".md", ".docx", ".pdf", ".csv", ".xlsx"]
+    SUPPORTED_FORMATS = [".txt", ".md", ".docx", ".pdf", ".csv", ".xlsx", ".html"]
     MAX_FILE_SIZE = 1_048_576  # 1 MB in bytes
 
     # Binary formats that go through the extractor registry instead of
@@ -19,6 +20,7 @@ class DocumentLoader:
         ".pdf": PdfExtractor(),
         ".csv": CsvExtractor(),
         ".xlsx": XlsxExtractor(),
+        ".html": HtmlExtractor(),
     }
 
     def load_file(self, filepath: str) -> dict:

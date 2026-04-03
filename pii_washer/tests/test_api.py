@@ -308,6 +308,13 @@ class TestFileUpload:
         assert resp.status_code == 201
         assert resp.json()["source_format"] == ".xlsx"
 
+    def test_upload_html_file(self, client):
+        content = b"<html><body><p>John Smith called (555) 123-4567.</p></body></html>"
+        resp = client.post("/api/v1/sessions/upload",
+            files={"file": ("test.html", content, "text/html")})
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".html"
+
 
 # ---------------------------------------------------------------------------
 # 4. Detection management
