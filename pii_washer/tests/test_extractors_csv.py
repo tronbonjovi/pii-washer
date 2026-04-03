@@ -45,7 +45,7 @@ def test_empty_rows_skipped(extractor):
     """Blank lines in the CSV do not appear in the output."""
     content = b"Name,Email\n\nJohn,john@example.com\n\n"
     result = extractor.extract(content, "test.csv")
-    lines = [l for l in result.splitlines() if l]
+    lines = [line for line in result.splitlines() if line]
     assert len(lines) == 2
 
 

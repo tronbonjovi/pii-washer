@@ -235,6 +235,7 @@ def test_get_max_file_size(loader):
 
 def test_load_bytes_docx(loader):
     import io
+
     from docx import Document
     doc = Document()
     doc.add_paragraph("John Smith lives in Springfield.")
@@ -253,6 +254,7 @@ def test_load_bytes_unsupported_format(loader):
 
 def test_load_bytes_empty_extraction(loader):
     import io
+
     from docx import Document
     doc = Document()
     buf = io.BytesIO()

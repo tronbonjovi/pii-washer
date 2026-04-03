@@ -99,7 +99,7 @@ def test_br_converted_to_newline(extractor):
 
 def test_bytes_input(extractor):
     """Accepts bytes and decodes correctly."""
-    content = "<html><body><p>Jane Doe called (555) 123-4567.</p></body></html>".encode("utf-8")
+    content = b"<html><body><p>Jane Doe called (555) 123-4567.</p></body></html>"
     result = extractor.extract(content, "test.html")
     assert "Jane Doe" in result
 
