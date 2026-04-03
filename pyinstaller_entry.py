@@ -74,7 +74,7 @@ def main():
 
     icon = _find_icon()
     webview.create_window("PII Washer", URL, width=1200, height=850)
-    webview.start(icon=icon)
+    webview.start(icon=icon, private_mode=True)
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ This roadmap frames the work ahead for Pii Washer. Items are grouped by time hor
 | Bug fix batch | Upload metadata persistence, file size limit alignment, city regex perf, ResponseTab render fix, blob URL timing, Confirm All edit lock | 2026-03-27 |
 | Session removal | Removed user-facing session management. Single-session utility with "Start Over" button. Released as v1.1.0. | 2026-04-01 |
 | Codex review remediation | API hardening (6 fixes) + ALL CAPS name detection + UI bug fix. Driven by full-codebase Codex adversarial review. PR #3. Full tracker: `docs/codex-review-tracker.md` (5 open, 4 mitigated, 5 N/A remaining). | 2026-04-02 |
+| Dependency documentation | Added US/English-only scope disclaimer to README. Removed dead Tauri deps. Added missing tsconfig files so `npm run build` works on fresh clones. Full dep listing deferred — low value at current project stage. | 2026-04-03 |
 
 ## Near-term — Core functionality and trust
 
@@ -25,7 +26,7 @@ Focus is on completing the app's core capabilities and security posture before p
 | # | Item | Description | Status |
 |---|---|---|---|
 | 1 | Security assessment | Investigate WebView2 disk caching, clipboard persistence, PyInstaller temp dir behavior. Runtime/platform-level concerns. See also Codex tracker #14 (`secure_clear` memory limits). | TBD — needs brainstorm session |
-| 2 | Dependency documentation | Document all dependencies and their roles. Transparent disclaimers about what the tool does and doesn't guarantee. | TBD — needs brainstorm session |
+| ~~2~~ | ~~Dependency documentation~~ | ~~Completed — see Completed table~~ | ~~Done~~ |
 
 ## Medium-term — Expand capabilities
 
