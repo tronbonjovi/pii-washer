@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AppShell } from '@/components/layout/AppShell';
+import { AppErrorBoundary } from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 
 const queryClient = new QueryClient({
@@ -17,7 +18,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <AppShell />
+        <AppErrorBoundary>
+          <AppShell />
+        </AppErrorBoundary>
         <Toaster />
       </ThemeProvider>
     </QueryClientProvider>

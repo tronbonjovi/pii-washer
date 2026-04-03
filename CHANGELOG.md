@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.1.1] - 2026-04-03
 
 ### Added
 
@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ALL CAPS name detection in `DictionaryNameRecognizer` and `TitleNameRecognizer`
 - Typed `SessionDetailResponse` Pydantic model for `GET /sessions/{id}`
 - Custom placeholder validation (character allowlist, 50-char max)
+- React error boundary — app shows friendly error screen with "Start Over" instead of going blank
+- Frontend test infrastructure (vitest + testing-library) with store and component tests
+- API integration tests with real Presidio/spaCy (skips gracefully if model not installed)
+- Codex adversarial review tracker (`docs/codex-review-tracker.md`) — single source of truth for all 22 findings
 
 ### Fixed
 
@@ -22,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CORS restricted to only used methods and headers
 - httpx client connection leak in update checker
 - File size error message corrected from "10 MB" to "1 MB"
+- Custom-edited placeholders now detected in `unknown_in_text` report during repersonalization
 
 ## [1.1.0] - 2026-04-01
 

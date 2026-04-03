@@ -11,4 +11,4 @@ CORS_ORIGINS = [
     "https://tauri.localhost",
     "tauri://localhost",
 ]
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"

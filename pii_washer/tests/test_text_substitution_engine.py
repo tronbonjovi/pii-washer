@@ -233,6 +233,35 @@ class TestRepersonalizeBasic:
 # Repersonalize — Unmatched Placeholders
 # ---------------------------------------------------------------------------
 
+class TestRepersonalizeCustomPlaceholders:
+
+    def test_repersonalize_unknown_custom_placeholder_detected(self):
+        """Custom-edited placeholders remaining in text should be reported as unknown."""
+        engine = TextSubstitutionEngine()
+        # User edited Person_1 to [CEO Name] and Person_2 to [CFO Name]
+        # AI response contains [CEO Name] (matched) and [CFO Name] (unknown - not in our map)
+        text = "[CEO Name] met with [CFO Name] at the office."
+        detections = [
+            make_detection("John Smith", "[CEO Name]", []),
+            make_detection("Jane Doe", "[CFO Name]", [], status="rejected"),
+        ]
+        result = engine.repersonalize(text, detections)
+        assert "John Smith" in result["text"]
+        # [CFO Name] is a known placeholder from this session (rejected), so it should
+        # appear in unknown_in_text since it remains in the output unreplaced
+        assert "[CFO Name]" in result["unknown_in_text"]
+
+    def test_repersonalize_custom_placeholder_not_in_session_ignored(self):
+        """Brackets in text that aren't session placeholders should not be flagged."""
+        engine = TextSubstitutionEngine()
+        text = "[CEO Name] went to the [grocery store] today."
+        detections = [make_detection("John Smith", "[CEO Name]", [])]
+        result = engine.repersonalize(text, detections)
+        assert "John Smith" in result["text"]
+        # [grocery store] is not a placeholder from this session, should not be flagged
+        assert "[grocery store]" not in result["unknown_in_text"]
+
+
 class TestRepersonalizeUnmatched:
 
     def test_repersonalize_unmatched_from_map(self):

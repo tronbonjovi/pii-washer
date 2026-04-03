@@ -128,11 +128,22 @@ class TextSubstitutionEngine:
             else:
                 unmatched_from_map.append(placeholder)
 
-        # Scan for unknown placeholders remaining in the text
-        unknown_in_text = [
+        # Scan for unknown placeholders remaining in the text.
+        # 1) Standard pattern catches any [Type_N] placeholders not in our map
+        standard_unknown = {
             m for m in re.findall(self.PLACEHOLDER_PATTERN, result)
             if m not in replacement_map
-        ]
+        }
+        # 2) Dynamic scan: collect ALL placeholder strings from the full detection
+        #    list (including rejected ones) and check if any remain in the result.
+        #    This catches custom-edited placeholders like [CEO Name] that the
+        #    hardcoded pattern would miss.
+        all_session_placeholders = {det["placeholder"] for det in detections}
+        dynamic_unknown = {
+            ph for ph in all_session_placeholders
+            if ph not in replacement_map and ph in result
+        }
+        unknown_in_text = sorted(standard_unknown | dynamic_unknown)
 
         total = len(replacement_map)
         matched_count = len(matched)
