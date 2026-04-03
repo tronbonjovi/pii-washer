@@ -284,6 +284,30 @@ class TestFileUpload:
         assert resp.status_code == 201
         assert resp.json()["source_format"] == ".pdf"
 
+    def test_upload_csv_file(self, client):
+        resp = client.post(
+            "/api/v1/sessions/upload",
+            files={"file": ("test.csv", b"Name,Email\nJohn Smith,john@example.com\n", "text/csv")},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".csv"
+
+    def test_upload_xlsx_file(self, client):
+        from openpyxl import Workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.append(["Name", "Email"])
+        ws.append(["John Smith", "john@example.com"])
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        resp = client.post(
+            "/api/v1/sessions/upload",
+            files={"file": ("test.xlsx", buf, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+        )
+        assert resp.status_code == 201
+        assert resp.json()["source_format"] == ".xlsx"
+
 
 # ---------------------------------------------------------------------------
 # 4. Detection management

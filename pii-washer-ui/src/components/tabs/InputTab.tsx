@@ -18,7 +18,7 @@ function getErrorMessage(error: unknown): string {
       return 'The file is too large. Maximum size is 1 MB.';
     }
     if (error.code === 'UNSUPPORTED_FORMAT') {
-      return 'Unsupported file type. Supported formats: .txt, .md, .docx, .pdf';
+      return 'Unsupported file type. Supported formats: .txt, .md, .docx, .pdf, .csv, .xlsx';
     }
     if (error.code === 'NETWORK_ERROR') {
       return "Unable to connect to the PII Washer backend. Make sure it's running on port 8000.";
@@ -174,7 +174,7 @@ export function InputTab() {
           ) : (
             <>
               <Upload className="size-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Upload file (.txt, .md, .docx, .pdf)</span>
+              <span className="text-muted-foreground">Upload file</span>
             </>
           )}
         </div>
@@ -182,7 +182,7 @@ export function InputTab() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".txt,.md,.docx,.pdf,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+          accept=".txt,.md,.docx,.pdf,.csv,.xlsx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="hidden"
           onChange={handleFileInputChange}
         />
