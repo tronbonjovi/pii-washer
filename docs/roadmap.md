@@ -35,6 +35,7 @@ Focus is on completing the app's core capabilities and security posture before p
 | Item | Description | Status |
 |---|---|---|
 | ~~Cross-platform release builds~~ | ~~Completed — see Completed table~~ | ~~Done~~ |
+| macOS executable debugging | Blank white screen on macOS — pywebview + WebKit + PyInstaller bundling issue. Needs macOS dev environment to debug. Windows and Linux builds work. | TBD — blocked on macOS dev setup |
 | Code signing | Sign the Windows exe to eliminate SmartScreen warnings. Requires purchasing a code signing certificate ($100-400/yr). | TBD — worth revisiting once there's a user base |
 | ~~Additional file formats~~ | ~~Support beyond .txt and .md~~ | ~~Done — see Completed table~~ |
 | Detection improvements v2 | International PII, date false positives, CapitalizedPairRecognizer tuning. See Codex tracker #15-17 for current state and what's already mitigated. | TBD — needs brainstorm session |
