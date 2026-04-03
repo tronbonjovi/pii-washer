@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import JSONResponse
 
+from pii_washer.api.update_checker import check_for_updates
 from pii_washer.document_loader import DocumentLoader
 
 from .config import ALLOWED_EXTENSIONS, APP_VERSION, BINARY_FORMATS
@@ -34,7 +35,6 @@ from .models import (
     UpdateCheckResponse,
     UpdateDetectionStatusRequest,
 )
-from pii_washer.api.update_checker import check_for_updates
 
 router = APIRouter()
 

@@ -5,7 +5,6 @@ from openpyxl import Workbook
 
 from pii_washer.extractors.xlsx import XlsxExtractor
 
-
 # === Helpers ===
 
 
@@ -106,7 +105,7 @@ def test_empty_rows_skipped(extractor):
     content = buf.getvalue()
 
     result = extractor.extract(content, "test.xlsx")
-    lines = [l for l in result.splitlines() if l]
+    lines = [line for line in result.splitlines() if line]
     assert len(lines) == 2
 
 

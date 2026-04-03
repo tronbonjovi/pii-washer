@@ -2,11 +2,8 @@ import io
 
 import pytest
 from docx import Document
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
 
 from pii_washer.extractors.docx import DocxExtractor
-
 
 # === Helpers ===
 

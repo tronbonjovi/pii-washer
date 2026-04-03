@@ -41,7 +41,9 @@ export function InputTab() {
 
   const analyzeDocument = useAnalyzeDocument();
   const analyzeDocumentRef = useRef(analyzeDocument);
-  analyzeDocumentRef.current = analyzeDocument;
+  useEffect(() => {
+    analyzeDocumentRef.current = analyzeDocument;
+  }, [analyzeDocument]);
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const resetSession = useSessionStore((s) => s.resetSession);
   const { data: activeSession } = useSession(activeSessionId);
@@ -49,6 +51,9 @@ export function InputTab() {
   const draftSession =
     activeSession && activeSession.status === 'user_input' ? activeSession : null;
 
+  // Sync local form state when the draft session changes (e.g. "Start Over").
+  // setState calls here are intentional — they reset the form to match the new session.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const nextKey = draftSession
       ? `${draftSession.session_id}:${draftSession.updated_at}`
@@ -71,6 +76,7 @@ export function InputTab() {
     }
     setText(draftSession.original_text);
   }, [draftSession, loadedSessionKey]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const hasInput = selectedFile !== null || text.trim().length > 0;
   const isAnalyzing = analyzeDocument.isPending;

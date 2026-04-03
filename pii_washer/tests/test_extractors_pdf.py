@@ -6,7 +6,6 @@ from reportlab.pdfgen import canvas
 
 from pii_washer.extractors.pdf import PdfExtractor
 
-
 # === Helpers ===
 
 

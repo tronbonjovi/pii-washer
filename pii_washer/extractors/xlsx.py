@@ -66,10 +66,8 @@ class XlsxExtractor(BaseExtractor):
                 if not rows_output:
                     continue
 
-                if multiple_sheets:
-                    block = f"[{sheet_name}]\n\n" + "\n".join(rows_output)
-                else:
-                    block = "\n".join(rows_output)
+                rows_text = "\n".join(rows_output)
+                block = f"[{sheet_name}]\n\n{rows_text}" if multiple_sheets else rows_text
 
                 sheet_blocks.append(block)
 
