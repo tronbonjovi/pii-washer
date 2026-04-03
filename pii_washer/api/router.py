@@ -52,7 +52,6 @@ def _to_session_created(session: dict) -> SessionCreatedResponse:
         status=session["status"],
         source_format=session["source_format"],
         source_filename=session["source_filename"],
-        original_text=session["original_text"],
     )
 
 

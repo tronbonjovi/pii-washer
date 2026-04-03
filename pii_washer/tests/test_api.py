@@ -146,7 +146,6 @@ class TestSessionCRUD:
         assert body["status"] == "user_input"
         assert body["source_format"] == "paste"
         assert body["source_filename"] is None
-        assert body["original_text"] == SAMPLE_TEXT
 
     def test_create_from_file_upload_returns_201(self, client):
         content = b"Hello, my name is John Smith."
@@ -159,6 +158,11 @@ class TestSessionCRUD:
         assert "session_id" in body
         assert body["source_format"] == ".txt"
         assert body["source_filename"] == "test.txt"
+
+    def test_create_session_does_not_return_original_text(self, client):
+        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
+        assert r.status_code == 201
+        assert "original_text" not in r.json()
 
     def test_get_session_by_id_returns_full_data(self, client):
         r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})

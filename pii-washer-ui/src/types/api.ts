@@ -81,7 +81,6 @@ export interface SessionCreatedResponse {
   status: SessionStatus;
   source_format: string;
   source_filename: string | null;
-  original_text: string;
 }
 
 export interface AnalyzeResponse {

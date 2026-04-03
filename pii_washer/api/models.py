@@ -47,7 +47,6 @@ class SessionCreatedResponse(BaseModel):
     status: str
     source_format: str
     source_filename: str | None
-    original_text: str
 
 
 
