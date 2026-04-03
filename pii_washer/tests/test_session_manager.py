@@ -364,6 +364,30 @@ class TestEditPlaceholder:
         result = manager.edit_detection_placeholder(sid, det_id, original_ph)
         assert result["placeholder"] == original_ph
 
+    def test_edit_placeholder_special_chars_raises(self, manager):
+        """Placeholders with special characters must be rejected."""
+        sid = manager.load_text(SAMPLE_TEXT)
+        detections = manager.analyze(sid)
+        det_id = detections[0]["id"]
+        with pytest.raises(ValueError, match="can only contain"):
+            manager.edit_detection_placeholder(sid, det_id, "<script>alert(1)</script>")
+
+    def test_edit_placeholder_too_long_raises(self, manager):
+        """Placeholders longer than 50 characters must be rejected."""
+        sid = manager.load_text(SAMPLE_TEXT)
+        detections = manager.analyze(sid)
+        det_id = detections[0]["id"]
+        with pytest.raises(ValueError, match="cannot exceed 50"):
+            manager.edit_detection_placeholder(sid, det_id, "[" + "A" * 60 + "]")
+
+    def test_edit_placeholder_brackets_and_underscores_allowed(self, manager):
+        """Placeholders with brackets, underscores, hyphens, and spaces are valid."""
+        sid = manager.load_text(SAMPLE_TEXT)
+        detections = manager.analyze(sid)
+        det_id = detections[0]["id"]
+        result = manager.edit_detection_placeholder(sid, det_id, "[My Client-Name 1]")
+        assert result["placeholder"] == "[My Client-Name 1]"
+
 
 # ---------------------------------------------------------------------------
 # Depersonalization

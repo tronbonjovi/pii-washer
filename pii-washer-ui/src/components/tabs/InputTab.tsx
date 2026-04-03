@@ -15,7 +15,7 @@ function getErrorMessage(error: unknown): string {
       return 'The PII detection engine is not available. Make sure the backend is running with spaCy installed.';
     }
     if (error.code === 'FILE_TOO_LARGE') {
-      return 'The file is too large. Maximum size is 10 MB.';
+      return 'The file is too large. Maximum size is 1 MB.';
     }
     if (error.code === 'UNSUPPORTED_FORMAT') {
       return 'Unsupported file type. Only .txt and .md files are accepted.';

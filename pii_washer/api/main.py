@@ -61,8 +61,8 @@ def create_app(session_manager=None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=CORS_ORIGINS,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+        allow_headers=["Content-Type"],
     )
 
     app.include_router(router, prefix=API_PREFIX)

@@ -75,6 +75,14 @@ class TestTitleNameRecognizer:
         title_results = [r for r in results if r.score == 0.7]
         assert len(title_results) == 0
 
+    def test_title_with_all_caps_name(self, analyzer):
+        """Titles followed by ALL CAPS names must be detected."""
+        text = "Dr. JANE DOE will see you now."
+        results = analyzer.analyze(text, language="en", entities=["PERSON"])
+        persons = [r for r in results if r.entity_type == "PERSON"]
+        texts = [text[r.start:r.end] for r in persons]
+        assert any("JANE" in t and "DOE" in t for t in texts)
+
 
 @pytest.fixture(scope="module")
 def dict_recognizer():
@@ -127,6 +135,24 @@ class TestDictionaryNameRecognizer:
         text = "Contact Jane Smith for details."
         results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
         assert any("Jane Smith" in text[r.start:r.end] for r in results)
+
+    def test_all_caps_full_name(self, dict_recognizer):
+        """ALL CAPS names like 'JOHN SMITH' must be detected."""
+        text = "The patient JOHN SMITH was admitted."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert any("JOHN SMITH" in text[r.start:r.end] for r in results)
+
+    def test_all_caps_three_word_name(self, dict_recognizer):
+        """Three-word ALL CAPS names must be detected."""
+        text = "Signed by MARY JANE WATSON on this date."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert any("MARY" in text[r.start:r.end] and "WATSON" in text[r.start:r.end] for r in results)
+
+    def test_all_caps_first_name_no_surname_still_skipped(self, dict_recognizer):
+        """A lone ALL CAPS first name without a capitalized surname should not match."""
+        text = "JAMES went to the store."
+        results = dict_recognizer.analyze(text, entities=["PERSON"], nlp_artifacts=None, regex_flags=0)
+        assert len(results) == 0
 
 
 @pytest.fixture(scope="module")

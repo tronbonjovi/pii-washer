@@ -49,5 +49,5 @@ def server_error_response(exc: Exception) -> JSONResponse:
     logger.exception("Unhandled error: %s", exc)
     return JSONResponse(
         status_code=500,
-        content=_error_body("SERVER_ERROR", f"An unexpected error occurred: {type(exc).__name__}: {exc}"),
+        content=_error_body("SERVER_ERROR", "An unexpected error occurred"),
     )

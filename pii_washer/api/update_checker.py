@@ -29,35 +29,35 @@ async def check_for_updates() -> dict:
     current = get_current_version()
 
     try:
-        client = httpx.AsyncClient()
-        resp = await client.get(
-            GITHUB_API_URL,
-            headers={"Accept": "application/vnd.github.v3+json"},
-            timeout=10.0,
-        )
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                GITHUB_API_URL,
+                headers={"Accept": "application/vnd.github.v3+json"},
+                timeout=10.0,
+            )
 
-        # Support both real httpx (sync json) and test mocks (async json)
-        json_result = resp.json()
-        data = await json_result if inspect.isawaitable(json_result) else json_result
+            # Support both real httpx (sync json) and test mocks (async json)
+            json_result = resp.json()
+            data = await json_result if inspect.isawaitable(json_result) else json_result
 
-        tag = data.get("tag_name")
-        if not tag:
+            tag = data.get("tag_name")
+            if not tag:
+                return {
+                    "current_version": current,
+                    "latest_version": None,
+                    "update_available": False,
+                    "error": "No version tag in GitHub response",
+                }
+
+            latest = tag.lstrip("v")
+            update_available = Version(latest) > Version(current)
+
             return {
                 "current_version": current,
-                "latest_version": None,
-                "update_available": False,
-                "error": "No version tag in GitHub response",
+                "latest_version": latest,
+                "update_available": update_available,
+                "release_url": data.get("html_url") if update_available else None,
             }
-
-        latest = tag.lstrip("v")
-        update_available = Version(latest) > Version(current)
-
-        return {
-            "current_version": current,
-            "latest_version": latest,
-            "update_available": update_available,
-            "release_url": data.get("html_url") if update_available else None,
-        }
 
     except Exception as exc:
         logger.warning("Update check failed: %s", exc)
