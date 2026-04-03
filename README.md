@@ -30,9 +30,15 @@ Placeholder mappings are consistent within a session — the same name always ge
 
 ## Quick start
 
-### Option A: Download the desktop app (Windows)
+### Option A: Download the desktop app
 
-Grab **pii-washer.exe** from the [latest release](https://github.com/tronbonjovi/pii-washer/releases/latest). Double-click to run — no install, no Python, no setup.
+Grab the latest release for your platform from the [releases page](https://github.com/tronbonjovi/pii-washer/releases/latest):
+
+- **Windows:** `pii-washer-windows.exe`
+- **macOS:** `pii-washer-macos`
+- **Linux:** `pii-washer-linux`
+
+No install, no Python, no setup — just download and run.
 
 ### Option B: Run from source
 

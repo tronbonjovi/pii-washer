@@ -19,6 +19,7 @@ This roadmap frames the work ahead for Pii Washer. Items are grouped by time hor
 | Codex review remediation | API hardening (6 fixes) + ALL CAPS name detection + UI bug fix. Driven by full-codebase Codex adversarial review. PR #3. Full tracker: `docs/codex-review-tracker.md` (5 open, 4 mitigated, 5 N/A remaining). | 2026-04-02 |
 | Dependency documentation | Added US/English-only scope disclaimer to README. Removed dead Tauri deps. Added missing tsconfig files so `npm run build` works on fresh clones. Full dep listing deferred — low value at current project stage. | 2026-04-03 |
 | Additional file formats | Added .docx, .pdf, .csv, .xlsx, .html support via extractor architecture. Structure preserved in extraction. | 2026-04-03 |
+| Cross-platform release builds | GitHub Actions CI (lint + test on push/PR) and release workflow (builds Win/Mac/Linux executables on tag push, uploads to GitHub Releases). PR #5. | 2026-04-03 |
 
 ## Near-term — Core functionality and trust
 
@@ -33,7 +34,7 @@ Focus is on completing the app's core capabilities and security posture before p
 
 | Item | Description | Status |
 |---|---|---|
-| Cross-platform release builds | GitHub Actions workflow that builds Windows, macOS, and Linux executables on release and uploads them as assets | TBD — needs brainstorm session |
+| ~~Cross-platform release builds~~ | ~~Completed — see Completed table~~ | ~~Done~~ |
 | Code signing | Sign the Windows exe to eliminate SmartScreen warnings. Requires purchasing a code signing certificate ($100-400/yr). | TBD — worth revisiting once there's a user base |
 | ~~Additional file formats~~ | ~~Support beyond .txt and .md~~ | ~~Done — see Completed table~~ |
 | Detection improvements v2 | International PII, date false positives, CapitalizedPairRecognizer tuning. See Codex tracker #15-17 for current state and what's already mitigated. | TBD — needs brainstorm session |

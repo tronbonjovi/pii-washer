@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - File format support: .docx, .pdf, .csv, .xlsx, .html
 - Extractor architecture in `pii_washer/extractors/` with strategy pattern
 - Structure preservation: headings, paragraphs, lists, and tables maintained in extracted text
+- CI workflow: backend tests (Python 3.12/3.13), Ruff lint, frontend lint/build/test on every push/PR
+- Cross-platform release workflow: builds Windows, macOS, and Linux executables on tag push via GitHub Actions
 
 ## [1.1.1] - 2026-04-03
 
