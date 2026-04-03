@@ -82,6 +82,18 @@ class SessionManager:
         )
         return session_id
 
+    def load_uploaded_bytes(self, content, extension, filename):
+        """Create a session from raw binary upload bytes (e.g. .docx).
+
+        Delegates extraction to DocumentLoader.load_bytes(), which routes
+        through the extractor registry.
+        """
+        result = self.document_loader.load_bytes(content, extension, filename)
+        session_id = self.store.create_session(
+            result["text"], result["source_format"], result["filename"]
+        )
+        return session_id
+
     def analyze(self, session_id):
         session = self.store.get_session(session_id)
         status = session["status"]

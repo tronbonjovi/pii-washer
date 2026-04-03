@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 
 from pii_washer.document_loader import DocumentLoader
 
-from .config import ALLOWED_EXTENSIONS, APP_VERSION
+from .config import ALLOWED_EXTENSIONS, APP_VERSION, BINARY_FORMATS
 from .errors import (
     _error_body,
     key_error_response,
@@ -136,7 +136,7 @@ async def upload_session(file: UploadFile, request: Request):
             status_code=422,
             content=_error_body(
                 "UNSUPPORTED_FORMAT",
-                f"File type '{suffix}' is not supported. Allowed: .txt, .md",
+                f"File type '{suffix}' is not supported. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}",
             ),
         )
 
@@ -160,21 +160,24 @@ async def upload_session(file: UploadFile, request: Request):
         chunks.append(chunk)
     content = b"".join(chunks)
 
-    # Decode in memory — never write PII to disk
-    try:
-        text = content.decode("utf-8")
-    except UnicodeDecodeError:
-        return JSONResponse(
-            status_code=422,
-            content=_error_body(
-                "DECODE_ERROR",
-                "File could not be decoded as UTF-8 text",
-            ),
-        )
-
     try:
         sm = _sm(request)
-        session_id = sm.load_uploaded_content(text, suffix, file.filename)
+        if suffix in BINARY_FORMATS:
+            # Binary formats go straight to the extractor pipeline — no UTF-8 decode
+            session_id = sm.load_uploaded_bytes(content, suffix, file.filename)
+        else:
+            # Text formats: decode in memory — never write PII to disk
+            try:
+                text = content.decode("utf-8")
+            except UnicodeDecodeError:
+                return JSONResponse(
+                    status_code=422,
+                    content=_error_body(
+                        "DECODE_ERROR",
+                        "File could not be decoded as UTF-8 text",
+                    ),
+                )
+            session_id = sm.load_uploaded_content(text, suffix, file.filename)
         session = sm.get_session(session_id)
         return _to_session_created(session)
     except ValueError as exc:

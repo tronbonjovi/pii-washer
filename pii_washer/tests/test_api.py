@@ -255,6 +255,22 @@ class TestFileUpload:
         assert r.status_code == 413
         assert r.json()["error"]["code"] == "FILE_TOO_LARGE"
 
+    def test_upload_docx_file(self, client):
+        from docx import Document
+        doc = Document()
+        doc.add_paragraph("John Smith lives in Springfield.")
+        buf = io.BytesIO()
+        doc.save(buf)
+        buf.seek(0)
+        resp = client.post(
+            "/api/v1/sessions/upload",
+            files={"file": ("test.docx", buf, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["source_format"] == ".docx"
+        assert data["source_filename"] == "test.docx"
+
 
 # ---------------------------------------------------------------------------
 # 4. Detection management

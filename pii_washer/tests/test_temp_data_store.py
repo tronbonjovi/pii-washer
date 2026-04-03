@@ -47,7 +47,7 @@ def test_create_session_empty_text_raises():
 def test_create_session_invalid_format_raises():
     store = TempDataStore()
     with pytest.raises(ValueError, match="Invalid source format"):
-        store.create_session("text", ".docx")
+        store.create_session("text", ".xyz")
 
 
 def test_create_multiple_sessions():

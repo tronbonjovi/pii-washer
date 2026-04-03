@@ -3,7 +3,7 @@ import copy
 import os
 from datetime import UTC, datetime
 
-VALID_SOURCE_FORMATS = {".txt", ".md", "paste"}
+VALID_SOURCE_FORMATS = {".txt", ".md", ".docx", "paste"}
 VALID_STATUSES = {
     "user_input", "analyzed", "depersonalized",
     "awaiting_response", "repersonalized", "closed",
