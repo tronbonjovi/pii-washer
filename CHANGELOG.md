@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Settings menu (gear icon) in header with About dialog and Check for Updates
 - `GET /api/v1/updates/check` endpoint for version comparison against GitHub releases
+- ALL CAPS name detection in `DictionaryNameRecognizer` and `TitleNameRecognizer`
+- Typed `SessionDetailResponse` Pydantic model for `GET /sessions/{id}`
+- Custom placeholder validation (character allowlist, 50-char max)
+
+### Fixed
+
+- Session creation response no longer includes `original_text` (reduces PII exposure in browser caches)
+- Server error responses no longer leak internal exception details
+- CORS restricted to only used methods and headers
+- httpx client connection leak in update checker
+- File size error message corrected from "10 MB" to "1 MB"
 
 ## [1.1.0] - 2026-04-01
 
