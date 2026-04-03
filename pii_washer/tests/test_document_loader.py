@@ -106,7 +106,7 @@ def test_load_file_latin1_fallback(loader, tmp_path):
 
 
 def test_load_file_unsupported_format(loader, tmp_path):
-    path = create_test_file(tmp_path, "document.docx", "content")
+    path = create_test_file(tmp_path, "document.xyz", "content")
     with pytest.raises(ValueError, match="Unsupported file format"):
         loader.load_file(path)
 
@@ -157,7 +157,7 @@ def test_load_file_binary_content(loader, tmp_path):
 
 def test_validation_order_format_before_existence(loader):
     with pytest.raises(ValueError, match="Unsupported file format"):
-        loader.load_file("/fake/path/file.docx")
+        loader.load_file("/fake/path/file.xyz")
 
 
 # === Loading Text — Happy Path ===
@@ -218,7 +218,9 @@ def test_load_text_not_a_string(loader):
 
 def test_get_supported_formats(loader):
     formats = loader.get_supported_formats()
-    assert formats == [".txt", ".md"]
+    assert ".txt" in formats
+    assert ".md" in formats
+    assert ".docx" in formats
     assert isinstance(formats, list)
 
 
@@ -226,6 +228,42 @@ def test_get_max_file_size(loader):
     size = loader.get_max_file_size()
     assert size == 1048576
     assert isinstance(size, int)
+
+
+# === load_bytes() ===
+
+
+def test_load_bytes_docx(loader):
+    import io
+    from docx import Document
+    doc = Document()
+    doc.add_paragraph("John Smith lives in Springfield.")
+    buf = io.BytesIO()
+    doc.save(buf)
+    result = loader.load_bytes(buf.getvalue(), ".docx", "test.docx")
+    assert "John Smith" in result["text"]
+    assert result["source_format"] == ".docx"
+    assert result["filename"] == "test.docx"
+
+
+def test_load_bytes_unsupported_format(loader):
+    with pytest.raises(ValueError, match="Unsupported file format"):
+        loader.load_bytes(b"data", ".xyz", "test.xyz")
+
+
+def test_load_bytes_empty_extraction(loader):
+    import io
+    from docx import Document
+    doc = Document()
+    buf = io.BytesIO()
+    doc.save(buf)
+    with pytest.raises(ValueError, match="No text content"):
+        loader.load_bytes(buf.getvalue(), ".docx", "empty.docx")
+
+
+def test_get_supported_formats_includes_docx(loader):
+    formats = loader.get_supported_formats()
+    assert ".docx" in formats
 
 
 # === Integration Readiness ===
