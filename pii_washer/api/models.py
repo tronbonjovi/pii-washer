@@ -47,7 +47,6 @@ class SessionCreatedResponse(BaseModel):
     status: str
     source_format: str
     source_filename: str | None
-    original_text: str
 
 
 
@@ -65,6 +64,21 @@ class Detection(BaseModel):
     positions: list[DetectionPosition]
     confidence: float
     source: str = "auto"
+
+
+class SessionDetailResponse(BaseModel):
+    session_id: str
+    status: str
+    created_at: str
+    updated_at: str
+    source_format: str
+    source_filename: str | None
+    original_text: str
+    pii_detections: list[Detection]
+    depersonalized_text: str | None
+    response_text: str | None
+    repersonalized_text: str | None
+    unmatched_placeholders: list[str]
 
 
 class AnalyzeResponse(BaseModel):

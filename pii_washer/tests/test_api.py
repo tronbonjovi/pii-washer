@@ -146,7 +146,6 @@ class TestSessionCRUD:
         assert body["status"] == "user_input"
         assert body["source_format"] == "paste"
         assert body["source_filename"] is None
-        assert body["original_text"] == SAMPLE_TEXT
 
     def test_create_from_file_upload_returns_201(self, client):
         content = b"Hello, my name is John Smith."
@@ -159,6 +158,11 @@ class TestSessionCRUD:
         assert "session_id" in body
         assert body["source_format"] == ".txt"
         assert body["source_filename"] == "test.txt"
+
+    def test_create_session_does_not_return_original_text(self, client):
+        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
+        assert r.status_code == 201
+        assert "original_text" not in r.json()
 
     def test_get_session_by_id_returns_full_data(self, client):
         r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
@@ -179,6 +183,21 @@ class TestSessionCRUD:
         assert body["session_id"] == session_id
         assert "detection_count" in body
         assert "can_analyze" in body
+
+    def test_get_session_returns_typed_response(self, client):
+        """GET /sessions/{id} must return exactly the expected fields."""
+        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
+        session_id = r.json()["session_id"]
+        r2 = client.get(f"/api/v1/sessions/{session_id}")
+        assert r2.status_code == 200
+        body = r2.json()
+        expected_keys = {
+            "session_id", "status", "created_at", "updated_at",
+            "source_format", "source_filename", "original_text",
+            "pii_detections", "depersonalized_text", "response_text",
+            "repersonalized_text", "unmatched_placeholders",
+        }
+        assert set(body.keys()) == expected_keys
 
 
 # ---------------------------------------------------------------------------
@@ -365,6 +384,19 @@ class TestErrorHandling:
         )
         assert r.status_code == 422
         assert r.json()["error"]["code"] == "TEXT_NOT_FOUND"
+
+    def test_server_error_does_not_leak_exception_details(self, client):
+        """500 responses must not expose internal exception class or message."""
+        r = client.post("/api/v1/sessions", json={"text": SAMPLE_TEXT})
+        session_id = r.json()["session_id"]
+        from unittest.mock import patch
+        with patch.object(client.app.state.session_manager, "get_session", side_effect=TypeError("internal details")):
+            r = client.get(f"/api/v1/sessions/{session_id}")
+        assert r.status_code == 500
+        msg = r.json()["error"]["message"]
+        assert "TypeError" not in msg
+        assert "internal details" not in msg
+        assert msg == "An unexpected error occurred"
 
 
 # ---------------------------------------------------------------------------

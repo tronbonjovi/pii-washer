@@ -32,8 +32,8 @@ class TestUpdateCheck:
         mock_response = AsyncMock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "tag_name": "v1.0.1",
-            "html_url": "https://github.com/tronbonjovi/pii-washer/releases/tag/v1.0.1",
+            "tag_name": "v1.1.0",
+            "html_url": "https://github.com/tronbonjovi/pii-washer/releases/tag/v1.1.0",
         }
 
         with patch("pii_washer.api.update_checker.httpx.AsyncClient") as MockClient:
@@ -49,8 +49,8 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.0.1"
-        assert body["latest_version"] == "1.0.1"
+        assert body["current_version"] == "1.1.0"
+        assert body["latest_version"] == "1.1.0"
         assert body["update_available"] is False
         assert body["error"] is None
 
@@ -76,7 +76,7 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.0.1"
+        assert body["current_version"] == "1.1.0"
         assert body["latest_version"] == "2.0.0"
         assert body["update_available"] is True
         assert body["release_url"] == "https://github.com/tronbonjovi/pii-washer/releases/tag/v2.0.0"
@@ -96,7 +96,7 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.0.1"
+        assert body["current_version"] == "1.1.0"
         assert body["latest_version"] is None
         assert body["update_available"] is False
         assert body["error"] is not None
@@ -120,7 +120,7 @@ class TestUpdateCheck:
 
         assert r.status_code == 200
         body = r.json()
-        assert body["current_version"] == "1.0.1"
+        assert body["current_version"] == "1.1.0"
         assert body["latest_version"] is None
         assert body["update_available"] is False
         assert body["error"] is not None
