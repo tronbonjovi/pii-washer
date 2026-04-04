@@ -1,6 +1,20 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. This repo is **private** — safe to include dev notes, plans, and AI instructions here.
+
+## Development Environments
+
+Three machines share this repo. Always `git pull` before starting work.
+
+| Machine | OS | Primary use | Notes |
+|---|---|---|---|
+| Linux devbox | Ubuntu (SSH) | Main development | Primary workflow, accessed via terminal from Windows or Mac |
+| Windows desktop | Windows 11 | Testing Windows exe | Also has VS Code / VSCodium with Remote SSH to devbox |
+| MacBook Pro | macOS | Testing macOS exe, debugging macOS issues | New — being set up for macOS-specific work |
+
+**Sync rule:** Git is the single source of truth. No manual syncing. Push when done, pull when starting. CLAUDE.md carries project context so any environment can pick up where the last left off.
+
+**What doesn't sync:** The `.claude/` directory (memory, local settings) is per-machine. Each environment has its own Claude Code memory. Project context that matters across environments goes in this file or in `docs/`.
 
 ## Project Overview
 
