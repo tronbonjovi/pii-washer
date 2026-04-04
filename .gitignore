@@ -19,7 +19,6 @@ archive/
 .superpowers/
 
 # Claude Code config (local only)
-CLAUDE.md
 .claude/settings.local.json
 
 # Security review docs (local only)
