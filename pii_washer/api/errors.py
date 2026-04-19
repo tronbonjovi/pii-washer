@@ -2,6 +2,8 @@ import logging
 
 from fastapi.responses import JSONResponse
 
+from .exceptions import APIError
+
 logger = logging.getLogger("pii_washer")
 
 
@@ -10,7 +12,10 @@ def _error_body(code: str, message: str, details=None) -> dict:
 
 
 def classify_value_error(message: str) -> tuple[int, str]:
-    """Return (http_status, error_code) for a ValueError based on its message."""
+    """Legacy classifier for plain ValueErrors. Kept as a fallback so raise
+    sites that haven't yet migrated to specific APIError subclasses still get
+    the right HTTP status. New code should raise a concrete APIError subclass
+    from pii_washer.api.exceptions instead."""
     if "session status is" in message or "expected '" in message:
         return 409, "INVALID_STATE"
     if "Detection not found:" in message:
@@ -31,6 +36,13 @@ def key_error_response(exc: KeyError) -> JSONResponse:
 
 def value_error_response(exc: ValueError) -> JSONResponse:
     message = str(exc)
+    # Prefer type-based classification. Any APIError subclass carries its own
+    # status + code, so we don't need to match on message wording.
+    if isinstance(exc, APIError):
+        return JSONResponse(
+            status_code=exc.http_status,
+            content=_error_body(exc.error_code, message),
+        )
     status_code, code = classify_value_error(message)
     return JSONResponse(
         status_code=status_code,

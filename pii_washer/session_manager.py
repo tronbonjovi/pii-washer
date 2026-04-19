@@ -7,6 +7,13 @@ Acts as the single interface the UI calls.
 import logging
 import re
 
+from pii_washer.api.exceptions import (
+    DetectionNotFoundError,
+    DuplicateDetectionError,
+    InvalidStateError,
+    TextNotFoundError,
+)
+
 _UNSET = object()
 _log = logging.getLogger(__name__)
 
@@ -98,7 +105,7 @@ class SessionManager:
         session = self.store.get_session(session_id)
         status = session["status"]
         if status != "user_input":
-            raise ValueError(
+            raise InvalidStateError(
                 f"Cannot analyze: session status is '{status}', expected 'user_input'"
             )
         if self.detection_engine is None:
@@ -130,7 +137,7 @@ class SessionManager:
         session = self.store.get_session(session_id)
         sess_status = session["status"]
         if sess_status != "analyzed":
-            raise ValueError(
+            raise InvalidStateError(
                 f"Cannot update detections: session status is '{sess_status}', expected 'analyzed'"
             )
         if status not in self.VALID_DETECTION_STATUSES:
@@ -144,13 +151,13 @@ class SessionManager:
                 })
                 return detection
 
-        raise ValueError(f"Detection not found: {detection_id}")
+        raise DetectionNotFoundError(f"Detection not found: {detection_id}")
 
     def confirm_all_detections(self, session_id):
         session = self.store.get_session(session_id)
         sess_status = session["status"]
         if sess_status != "analyzed":
-            raise ValueError(
+            raise InvalidStateError(
                 f"Cannot update detections: session status is '{sess_status}', expected 'analyzed'"
             )
 
@@ -169,7 +176,7 @@ class SessionManager:
         session = self.store.get_session(session_id)
         sess_status = session["status"]
         if sess_status != "analyzed":
-            raise ValueError(
+            raise InvalidStateError(
                 f"Cannot update detections: session status is '{sess_status}', expected 'analyzed'"
             )
         if not new_placeholder:
@@ -197,7 +204,7 @@ class SessionManager:
                 })
                 return detection
 
-        raise ValueError(f"Detection not found: {detection_id}")
+        raise DetectionNotFoundError(f"Detection not found: {detection_id}")
 
     def add_manual_detection(self, session_id, text_value, category):
         """Add a user-specified PII item to a session's detection list.
@@ -235,7 +242,7 @@ class SessionManager:
         for det in detections:
             if (det["original_value"].lower() == text_value.strip().lower()
                     and det["category"] == category):
-                raise ValueError(
+                raise DuplicateDetectionError(
                     f"'{text_value}' is already detected as {category}. "
                     "You can confirm or edit it in the detection list."
                 )
@@ -248,7 +255,7 @@ class SessionManager:
 
         # 7. Handle no matches
         if not positions:
-            raise ValueError(
+            raise TextNotFoundError(
                 f"'{text_value}' was not found in the document text."
             )
 
@@ -308,7 +315,7 @@ class SessionManager:
         session = self.store.get_session(session_id)
         status = session["status"]
         if status != "analyzed":
-            raise ValueError(
+            raise InvalidStateError(
                 f"Cannot depersonalize: session status is '{status}', expected 'analyzed'"
             )
 
@@ -329,7 +336,7 @@ class SessionManager:
         session = self.store.get_session(session_id)
         status = session["status"]
         if status != "depersonalized":
-            raise ValueError(
+            raise InvalidStateError(
                 f"Cannot load response: session status is '{status}', expected 'depersonalized'"
             )
 
@@ -344,7 +351,7 @@ class SessionManager:
         session = self.store.get_session(session_id)
         status = session["status"]
         if status != "awaiting_response":
-            raise ValueError(
+            raise InvalidStateError(
                 f"Cannot repersonalize: session status is '{status}', expected 'awaiting_response'"
             )
 
