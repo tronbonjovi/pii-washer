@@ -61,7 +61,7 @@ pytest -k "test_depersonalize"             # Run tests matching a name
 - **Never write PII to disk.** File uploads are decoded in memory. Session data is in-memory only.
 - **Tests use a MockDetectionEngine** that returns predictable detections without requiring spaCy/Presidio. The real engine is heavy (~560MB model) and slow to initialize.
 - The `create_app()` factory in `api/main.py` accepts an optional `session_manager` for test injection.
-- **Version is tracked in two places** that must stay in sync: `pyproject.toml` (source of truth for package metadata) and `pii_washer/api/config.py` (`APP_VERSION`). Update both when bumping.
+- **Version has a single source of truth: `pyproject.toml`.** The API reads it at runtime via `importlib.metadata.version("pii-washer")` (see `get_app_version()` in `pii_washer/api/config.py`). Only update `pyproject.toml` when bumping.
 
 ## CI / Release Pipeline
 

@@ -485,6 +485,23 @@ class TestHealthCheck:
             assert r.status_code == 200
             assert r.json()["engine_available"] is False
 
+    def test_version_matches_package_metadata(self, client):
+        """Version reported by the API must match the installed package metadata.
+
+        This guards the single-source-of-truth contract: pyproject.toml is the
+        authority, and the runtime reads it via importlib.metadata.
+        """
+        from importlib.metadata import version as pkg_version
+
+        expected = pkg_version("pii-washer")
+
+        health = client.get("/api/v1/health").json()
+        assert health["version"] == expected
+
+        # FastAPI exposes the app-level version via openapi.json
+        openapi = client.get("/openapi.json").json()
+        assert openapi["info"]["version"] == expected
+
 
 # ---------------------------------------------------------------------------
 # 7. Session lifecycle cleanup

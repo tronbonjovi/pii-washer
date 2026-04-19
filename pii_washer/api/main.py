@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import API_PREFIX, APP_VERSION, CORS_ORIGINS
+from .config import API_PREFIX, CORS_ORIGINS, get_app_version
 from .router import router
 
 
@@ -46,7 +46,7 @@ def create_app(session_manager=None) -> FastAPI:
             from pii_washer.session_manager import SessionManager
             app.state.session_manager = SessionManager()
 
-        logger.info("PII Washer %s started (log: %s)", APP_VERSION, _log_file)
+        logger.info("PII Washer %s started (log: %s)", get_app_version(), _log_file)
         yield
 
         app.state.session_manager.reset()
@@ -54,7 +54,7 @@ def create_app(session_manager=None) -> FastAPI:
 
     app = FastAPI(
         title="PII Washer API",
-        version=APP_VERSION,
+        version=get_app_version(),
         lifespan=lifespan,
     )
 

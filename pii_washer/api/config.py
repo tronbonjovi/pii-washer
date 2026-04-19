@@ -1,3 +1,6 @@
+from functools import lru_cache
+from importlib.metadata import PackageNotFoundError, version
+
 API_VERSION = "v1"
 API_PREFIX = f"/api/{API_VERSION}"
 DEFAULT_PORT = 8000
@@ -12,4 +15,12 @@ CORS_ORIGINS = [
     "https://tauri.localhost",
     "tauri://localhost",
 ]
-APP_VERSION = "1.2.0"
+
+
+@lru_cache(maxsize=1)
+def get_app_version() -> str:
+    """Return the installed package version. Single source of truth: pyproject.toml."""
+    try:
+        return version("pii-washer")
+    except PackageNotFoundError:
+        return "0.0.0+unknown"

@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from pii_washer.api.update_checker import check_for_updates
 from pii_washer.document_loader import DocumentLoader
 
-from .config import ALLOWED_EXTENSIONS, APP_VERSION, BINARY_FORMATS
+from .config import ALLOWED_EXTENSIONS, BINARY_FORMATS, get_app_version
 from .errors import (
     _error_body,
     key_error_response,
@@ -96,7 +96,7 @@ def health(request: Request):
     return HealthResponse(
         status="ok",
         engine_available=sm.detection_engine is not None,
-        version=APP_VERSION,
+        version=get_app_version(),
     )
 
 
