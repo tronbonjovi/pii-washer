@@ -10,6 +10,13 @@ import { isAPIError } from '@/types/api';
 import { Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+function responseTextKey(text: string | null | undefined): string {
+  if (!text) return 'empty';
+  // Fingerprint = length + prefix — enough to detect content changes without
+  // storing the full text in a React key.
+  return `${text.length}:${text.slice(0, 128)}`;
+}
+
 export function ResponseTab() {
   const activeSessionId = useSessionStore((s) => s.activeSessionId);
   const setActiveTab = useSessionStore((s) => s.setActiveTab);
@@ -27,7 +34,7 @@ export function ResponseTab() {
   const isBusy = loadResponse.isPending || repersonalize.isPending;
 
   const snapshotKey = session
-    ? `${session.session_id}:${session.status === 'awaiting_response' && !!session.response_text ? 'awaiting-response' : 'loaded'}`
+    ? `${session.session_id}:${session.status}:${responseTextKey(session.response_text)}`
     : activeSessionId
       ? `loading:${activeSessionId}`
       : null;
