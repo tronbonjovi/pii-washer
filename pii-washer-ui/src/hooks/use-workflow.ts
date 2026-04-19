@@ -1,24 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  analyzeSession,
   depersonalizeSession,
   loadResponseText,
   repersonalizeSession,
 } from '@/api/workflow';
 import type { Session } from '@/types/api';
-
-export function useAnalyze(sessionId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => analyzeSession(sessionId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['session', sessionId] });
-      queryClient.invalidateQueries({ queryKey: ['sessionStatus', sessionId] });
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-    },
-  });
-}
 
 export function useDepersonalize(sessionId: string) {
   const queryClient = useQueryClient();
