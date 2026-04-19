@@ -62,4 +62,3 @@ htmlcov/
 
 # Distribution / build artifacts
 *.spec
-pii-washer-ui/src-tauri/
