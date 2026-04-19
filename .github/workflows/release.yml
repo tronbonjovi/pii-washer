@@ -110,6 +110,16 @@ jobs:
           if [ -d "icon" ]; then
             ICON_DATA="--add-data icon${SEP}icon"
           fi
+          # PyInstaller hidden imports — modules its static analyzer can't
+          # discover. If any entry is removed, the build still succeeds but
+          # imports fail at runtime. The Linux smoke test below catches this.
+          #   pii_washer.*        — first-party package + submodules used by
+          #                         pyinstaller_entry.py and routed endpoints
+          #   pdfplumber/pdfminer — pdf extractor stack (pdfplumber imports
+          #                         pdfminer.six under the hood dynamically)
+          #   docx                — python-docx (docx extractor)
+          #   openpyxl            — xlsx extractor
+          #   bs4                 — beautifulsoup4 (html extractor)
           pyinstaller $PYINSTALLER_ARGS \
             $ONEFILE_FLAG \
             --add-data "ui${SEP}ui" \
@@ -146,6 +156,34 @@ jobs:
         with:
           name: ${{ matrix.artifact-name }}
           path: ${{ matrix.artifact-path }}
+
+      - name: Smoke test Linux binary (verifies hidden imports at runtime)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          # If any hidden import is missing, FastAPI startup fails and
+          # /api/v1/health never responds. xvfb-run provides a virtual
+          # display so pywebview's webview.start() doesn't kill the
+          # process on headless CI.
+          chmod +x dist/pii-washer
+          xvfb-run -a dist/pii-washer &
+          APP_PID=$!
+          success=0
+          for i in $(seq 1 60); do
+            if curl -fs http://127.0.0.1:8000/api/v1/health > /tmp/health.json 2>/dev/null; then
+              echo "Health check passed:"
+              cat /tmp/health.json
+              success=1
+              break
+            fi
+            sleep 2
+          done
+          kill $APP_PID 2>/dev/null || true
+          wait $APP_PID 2>/dev/null || true
+          if [ "$success" != "1" ]; then
+            echo "Smoke test FAILED: /api/v1/health never responded within 120s"
+            exit 1
+          fi
 
   create-release:
     needs: build-desktop
