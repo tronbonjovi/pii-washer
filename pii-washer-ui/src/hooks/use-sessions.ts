@@ -57,7 +57,11 @@ export function useResetSession() {
   return useMutation({
     mutationFn: resetSession,
     onSuccess: () => {
-      queryClient.clear();
+      // Targeted invalidation — only session-scoped queries. Preserves
+      // unrelated caches (health, settings, updates).
+      queryClient.invalidateQueries({ queryKey: ['session'] });
+      queryClient.invalidateQueries({ queryKey: ['sessionStatus'] });
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
       resetStore();
     },
   });
