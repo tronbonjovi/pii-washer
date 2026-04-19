@@ -4,6 +4,7 @@ import { useSessionStore } from '@/store/session-store';
 import { DocumentViewer } from '@/components/review/DocumentViewer';
 import { DetectionSidebar } from '@/components/review/DetectionSidebar';
 import { DepersonalizedView } from '@/components/review/DepersonalizedView';
+import { NoSessionAlert } from '@/components/layout/NoSessionAlert';
 import { WorkflowNav } from '@/components/layout/WorkflowNav';
 import { Button } from '@/components/ui/button';
 
@@ -22,15 +23,7 @@ export function ReviewTab() {
   }, [activeSessionId, setFocusedDetection]);
 
   if (!activeSessionId) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-20 text-muted-foreground">
-        <p className="text-lg font-medium">No document loaded</p>
-        <p className="text-sm">Go to the Input tab to get started.</p>
-        <Button variant="outline" size="sm" className="mt-2" onClick={() => setActiveTab('input')}>
-          Go to Input
-        </Button>
-      </div>
-    );
+    return <NoSessionAlert />;
   }
 
   if (isLoading) {

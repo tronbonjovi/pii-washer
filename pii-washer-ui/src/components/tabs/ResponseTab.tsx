@@ -3,6 +3,7 @@ import { useSession, useSessionStatus } from '@/hooks/use-sessions';
 import { useLoadResponse, useRepersonalize } from '@/hooks/use-workflow';
 import { useSessionStore } from '@/store/session-store';
 import { PlaceholderMap } from '@/components/response/PlaceholderMap';
+import { NoSessionAlert } from '@/components/layout/NoSessionAlert';
 import { WorkflowNav } from '@/components/layout/WorkflowNav';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -54,15 +55,7 @@ export function ResponseTab() {
   }, [snapshotKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!activeSessionId) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-20 text-muted-foreground">
-        <p className="text-lg font-medium">No document loaded</p>
-        <p className="text-sm">Go to the Input tab to get started.</p>
-        <Button variant="outline" size="sm" className="mt-2" onClick={() => setActiveTab('input')}>
-          Go to Input
-        </Button>
-      </div>
-    );
+    return <NoSessionAlert />;
   }
 
   if (isLoading) {

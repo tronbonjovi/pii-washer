@@ -1,6 +1,7 @@
 import { useSession, useSessionStatus } from '@/hooks/use-sessions';
 import { useSessionStore } from '@/store/session-store';
 import { RepersonalizedView } from '@/components/results/RepersonalizedView';
+import { NoSessionAlert } from '@/components/layout/NoSessionAlert';
 import { WorkflowNav } from '@/components/layout/WorkflowNav';
 import { Button } from '@/components/ui/button';
 
@@ -12,15 +13,7 @@ export function ResultsTab() {
   const { data: sessionStatus } = useSessionStatus(activeSessionId);
 
   if (!activeSessionId) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-2 py-20 text-muted-foreground">
-        <p className="text-lg font-medium">No document loaded</p>
-        <p className="text-sm">Go to the Input tab to get started.</p>
-        <Button variant="outline" size="sm" className="mt-2" onClick={() => setActiveTab('input')}>
-          Go to Input
-        </Button>
-      </div>
-    );
+    return <NoSessionAlert />;
   }
 
   if (isLoading) {
