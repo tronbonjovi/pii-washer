@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Typed API exception classes in `pii_washer/api/exceptions.py` (`InvalidStateError`, `DetectionNotFoundError`, `DuplicateDetectionError`, `TextNotFoundError`) — each carries its own HTTP status and error code instead of being inferred from the error message
+- `get_app_version()` in `pii_washer/api/config.py` reads the version from installed package metadata — single source of truth in `pyproject.toml`
+- `NoSessionAlert` component for consistent empty-state UX across tabs
+- Release binary smoke test: on Linux, the built executable is launched under `xvfb-run` and polled via `/api/v1/health` — catches missing PyInstaller `--hidden-import` entries before a release ships
+
+### Changed
+
+- `MAX_FILE_SIZE` moved from `DocumentLoader` class attribute to `pii_washer/api/config.py`; router no longer imports `DocumentLoader` just for the constant
+- Release workflow builds against Python 3.11 (minimum supported) instead of 3.13, so release bytecode is compatible with the full 3.11/3.12/3.13 range
+- macOS release uses `--onedir` + zipped bundle instead of `--onefile` (avoids PyInstaller 7.0 breakage)
+- `useResetSession` now targets session-scoped query keys (`['session']`, `['sessionStatus']`, `['sessions']`) instead of clearing the entire React Query cache
+
+### Fixed
+
+- `ResponseTab` re-syncs its textarea when the server `response_text` changes while the session stays in `awaiting_response` — previously stuck on stale content in that edge case
+
+### Removed
+
+- Tauri CORS origins from `CORS_ORIGINS` (Tauri was removed from the project long ago)
+- Orphaned `SessionManager` methods: `get_depersonalized_text`, `load_response_file`
+- Dead frontend files: `App.css` (Vite scaffolding), `api/health.ts`, unused `useAnalyze` hook
+- Stale `.gitignore` entry for `pii-washer-ui/src-tauri/`
+- Dummy `"version": "0.0.0"` from frontend `package.json`
+- Stale `__version__ = "1.0.0"` from `pii_washer/__init__.py` (the `APP_VERSION` in `config.py` was kept in sync with `pyproject.toml`; both are now replaced by `get_app_version()`)
+
 ## [1.2.0] - 2026-04-03
 
 ### Added
