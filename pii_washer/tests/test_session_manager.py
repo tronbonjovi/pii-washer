@@ -432,20 +432,6 @@ class TestDepersonalization:
         with pytest.raises(ValueError, match="expected 'analyzed'"):
             manager.apply_depersonalization(sid)
 
-    def test_get_depersonalized_text(self, manager):
-        sid = manager.load_text(SAMPLE_TEXT)
-        manager.analyze(sid)
-        manager.confirm_all_detections(sid)
-        deperso = manager.apply_depersonalization(sid)
-        retrieved = manager.get_depersonalized_text(sid)
-        assert retrieved == deperso
-
-    def test_get_depersonalized_text_before_depersonalization(self, manager):
-        sid = manager.load_text(SAMPLE_TEXT)
-        manager.analyze(sid)
-        with pytest.raises(ValueError, match="not been depersonalized"):
-            manager.get_depersonalized_text(sid)
-
 
 # ---------------------------------------------------------------------------
 # Response Loading
@@ -461,18 +447,6 @@ class TestResponseLoading:
         assert isinstance(result, str)
         session = manager.get_session(sid)
         assert session["response_text"] is not None
-        assert session["status"] == "awaiting_response"
-
-    def test_load_response_file(self, manager, tmp_path):
-        sid = manager.load_text(SAMPLE_TEXT)
-        manager.analyze(sid)
-        manager.confirm_all_detections(sid)
-        manager.apply_depersonalization(sid)
-        f = tmp_path / "response.txt"
-        f.write_text("Dear [Person_1], approved.")
-        result = manager.load_response_file(sid, str(f))
-        assert isinstance(result, str)
-        session = manager.get_session(sid)
         assert session["status"] == "awaiting_response"
 
     def test_load_response_wrong_state(self, manager):

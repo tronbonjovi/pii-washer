@@ -325,12 +325,6 @@ class SessionManager:
         })
         return depersonalized
 
-    def get_depersonalized_text(self, session_id):
-        session = self.store.get_session(session_id)
-        if session["depersonalized_text"] is None:
-            raise ValueError("Session has not been depersonalized yet")
-        return session["depersonalized_text"]
-
     def load_response_text(self, session_id, text):
         session = self.store.get_session(session_id)
         status = session["status"]
@@ -340,21 +334,6 @@ class SessionManager:
             )
 
         result = self.document_loader.load_text(text)
-        self.store.update_session(session_id, {
-            "response_text": result["text"],
-            "status": "awaiting_response",
-        })
-        return result["text"]
-
-    def load_response_file(self, session_id, filepath):
-        session = self.store.get_session(session_id)
-        status = session["status"]
-        if status != "depersonalized":
-            raise ValueError(
-                f"Cannot load response: session status is '{status}', expected 'depersonalized'"
-            )
-
-        result = self.document_loader.load_file(filepath)
         self.store.update_session(session_id, {
             "response_text": result["text"],
             "status": "awaiting_response",
