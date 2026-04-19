@@ -6,6 +6,7 @@ API_PREFIX = f"/api/{API_VERSION}"
 DEFAULT_PORT = 8000
 ALLOWED_EXTENSIONS = {".txt", ".md", ".docx", ".pdf", ".csv", ".xlsx", ".html"}
 BINARY_FORMATS = {".docx", ".pdf", ".csv", ".xlsx", ".html"}
+MAX_FILE_SIZE = 1_048_576  # 1 MB in bytes — shared by router upload check and DocumentLoader
 CORS_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:5173",

@@ -1,5 +1,6 @@
 import os
 
+from pii_washer.api.config import MAX_FILE_SIZE
 from pii_washer.extractors.base import BaseExtractor
 from pii_washer.extractors.csv_ext import CsvExtractor
 from pii_washer.extractors.docx import DocxExtractor
@@ -10,7 +11,6 @@ from pii_washer.extractors.xlsx import XlsxExtractor
 
 class DocumentLoader:
     SUPPORTED_FORMATS = [".txt", ".md", ".docx", ".pdf", ".csv", ".xlsx", ".html"]
-    MAX_FILE_SIZE = 1_048_576  # 1 MB in bytes
 
     _EXTRACTOR_MAP: dict[str, BaseExtractor] = {
         ".docx": DocxExtractor(),
@@ -35,7 +35,7 @@ class DocumentLoader:
 
         # 3. Check size
         file_size = os.path.getsize(filepath)
-        if file_size > self.MAX_FILE_SIZE:
+        if file_size > MAX_FILE_SIZE:
             raise ValueError("File exceeds maximum size of 1 MB")
 
         # 4. Binary formats go through the extractor registry
@@ -127,7 +127,7 @@ class DocumentLoader:
         return self.SUPPORTED_FORMATS
 
     def get_max_file_size(self) -> int:
-        return self.MAX_FILE_SIZE
+        return MAX_FILE_SIZE
 
     def _normalize(self, text: str, strip_bom: bool = False) -> str:
         if strip_bom and text.startswith("\ufeff"):
