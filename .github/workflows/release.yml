@@ -42,14 +42,20 @@ jobs:
             artifact-name: pii-washer-windows
             exe-name: pii-washer.exe
             pyinstaller-args: --name pii-washer --windowed --icon assets/app-icons/pii-washer-app-icon.ico
+            onefile-flag: --onefile
+            artifact-path: dist/pii-washer.exe
           - os: macos-latest
             artifact-name: pii-washer-macos
             exe-name: pii-washer
             pyinstaller-args: --name pii-washer --icon assets/app-icons/pii-washer-app-icon.icns
+            onefile-flag: ""
+            artifact-path: dist/pii-washer-macos.zip
           - os: ubuntu-latest
             artifact-name: pii-washer-linux
             exe-name: pii-washer
             pyinstaller-args: --name pii-washer
+            onefile-flag: --onefile
+            artifact-path: dist/pii-washer
 
     runs-on: ${{ matrix.os }}
 
@@ -94,6 +100,7 @@ jobs:
         shell: bash
         env:
           PYINSTALLER_ARGS: ${{ matrix.pyinstaller-args }}
+          ONEFILE_FLAG: ${{ matrix.onefile-flag }}
         run: |
           SEP=":"
           if [ "$RUNNER_OS" = "Windows" ]; then
@@ -104,7 +111,7 @@ jobs:
             ICON_DATA="--add-data icon${SEP}icon"
           fi
           pyinstaller $PYINSTALLER_ARGS \
-            --onefile \
+            $ONEFILE_FLAG \
             --add-data "ui${SEP}ui" \
             --add-data "pii_washer/data${SEP}pii_washer/data" \
             $ICON_DATA \
@@ -127,11 +134,18 @@ jobs:
             --hidden-import bs4 \
             pyinstaller_entry.py
 
+      - name: Package macOS bundle
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cd dist
+          zip -r pii-washer-macos.zip pii-washer
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: dist/${{ matrix.exe-name }}
+          path: ${{ matrix.artifact-path }}
 
   create-release:
     needs: build-desktop
@@ -149,9 +163,9 @@ jobs:
         run: |
           mkdir -p release-assets
           cp release-artifacts/pii-washer-windows/pii-washer.exe release-assets/pii-washer-windows.exe
-          cp release-artifacts/pii-washer-macos/pii-washer release-assets/pii-washer-macos
+          cp release-artifacts/pii-washer-macos/pii-washer-macos.zip release-assets/pii-washer-macos.zip
           cp release-artifacts/pii-washer-linux/pii-washer release-assets/pii-washer-linux
-          chmod +x release-assets/pii-washer-macos release-assets/pii-washer-linux
+          chmod +x release-assets/pii-washer-linux
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -159,5 +173,5 @@ jobs:
           generate_release_notes: true
           files: |
             release-assets/pii-washer-windows.exe
-            release-assets/pii-washer-macos
+            release-assets/pii-washer-macos.zip
             release-assets/pii-washer-linux
